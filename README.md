@@ -51,9 +51,12 @@ git clone https://github.com/Burakxep/skoll.git && cd skoll
 pip install -r requirements.txt           # requests, feedparser, PyYAML
 cp config.example.yaml config.yaml        # your personal copy (gitignored)
 
-python -m skoll run --profile cybersec    # first scan, takes about a minute
-open reports/cybersec/$(date -u +%F)/report.html
+python -m skoll serve                     # web app: opens http://127.0.0.1:8765
 ```
+
+In the web app press **Run** and the dashboard fills with the scan. Prefer the
+terminal? `python -m skoll run --profile cybersec` does the same scan (about a
+minute) and writes `reports/cybersec/<date>/report.html`.
 
 Optional, for higher GitHub rate limits (a classic token with no scopes is enough):
 
@@ -68,6 +71,7 @@ what is new since the previous days.
 
 | Command | What it does |
 |---|---|
+| `python -m skoll serve` | Local web app: dashboard with a **Run** button (`--port`, `--no-browser`) |
 | `python -m skoll run -p cybersec` | Scan all sources, write today's reports |
 | `python -m skoll run -p cybersec -f redteam` | Same, but only items tagged `redteam` |
 | `python -m skoll run -p cybersec --dry-run` | Preview: no dedup, no history, writes `*.dry-run.*` |
@@ -80,6 +84,19 @@ what is new since the previous days.
 `python -m skoll -h` and `python -m skoll <command> -h` show all options and examples.
 
 ## What you get
+
+### Web app
+
+```bash
+python -m skoll serve            # http://127.0.0.1:8765
+```
+
+It serves the normal dashboard with one extra row: **profile, focus, dry run,
+▶ Run** and **✨ Analysis prompt**. Run starts the same scan as `skoll run`,
+shows its log, and reloads the page with the new report. The prompt button opens
+`prompt.md` in a panel with copy and download. One scan at a time; the server
+only listens on `127.0.0.1`. Reports opened straight from disk don't show the
+Run row, since they have no server behind them.
 
 ### Daily reports
 
@@ -98,6 +115,8 @@ reports/cybersec/
 The **dashboard** is a single self-contained HTML file. It has:
 - source tabs, a category menu, search, and sorting by score, date or stars/day;
 - score colours you can click to filter;
+- summary tiles (items, top, strong, breakouts, suspicious) and a source mix bar;
+- an **Analysis prompt** button that opens the day's `prompt.md` (copy / download);
 - light/dark themes and an **EN | TR** language switch.
 
 Behaviour across runs:
@@ -217,10 +236,11 @@ skoll/
 ├── scoring.py          all relevance rules (keywords, momentum, tiers, breakout)
 ├── store.py            SQLite: reported items + daily snapshots
 ├── report.py           daily HTML / digest / prompt
+├── server.py           local web app (python -m skoll serve)
 ├── weekly.py           weekly trend analysis
 ├── weekly_report.py    weekly HTML / digest / prompt
 └── connectors/         github, hackernews, reddit, rss (one file per source)
-templates/              dashboard + weekly HTML, theme, i18n (EN/TR), prompts
+templates/              dashboard, run bar + weekly HTML, theme, i18n (EN/TR), prompts
 tests/                  offline unit tests (no network)
 config.example.yaml     annotated config template
 SPEC.md                 design decisions and their reasons
