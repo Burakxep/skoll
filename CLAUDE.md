@@ -17,6 +17,10 @@ offensive-security tooling early.
   are recorded, so below-threshold items get re-scored on later runs).
 - `skoll/report.py` — builds `reports/<profile>/<date>/{report.html,digest.md,prompt.md}`.
 - `skoll/pipeline.py` — fetch → dedup → score → report (+ daily snapshots).
+- `skoll/server.py` — `python -m skoll serve`: stdlib localhost web app. Serves the
+  dashboard with a Run bar (`templates/runbar.html`, injected at the
+  `<!--SKOLL_RUNBAR-->` marker) that runs `pipeline.run_profile` in a thread.
+  No relevance logic here; keep it a thin wrapper around the pipeline.
 - `skoll/weekly.py` / `weekly_report.py` — this week vs last week trends.
 - `skoll/banner.py` — the ASCII wolf+sun banner printed on run.
 - `config.yaml` — the only place topic/source/keyword config lives (gitignored;
@@ -32,7 +36,7 @@ python -m skoll check --profile cybersec   # dry-run, no history writes
 python -m skoll serve                     # local web app: dashboard with a Run button in the header
 python -m skoll add-source --profile cybersec --subreddit redteamsec
 python -m skoll weekly --profile cybersec   # weekly trends (--no-fetch: offline)
-python -m unittest                        # offline tests, stdlib only
+python -m unittest                        # offline tests (incl. tests/test_server.py)
 ```
 Optional: `export GITHUB_TOKEN=...` (free PAT, public-repo read) to raise GitHub
 rate limits. Nothing else needs a key.

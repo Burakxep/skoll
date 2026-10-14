@@ -74,7 +74,8 @@ One folder per day: `reports/<profile>/<date>/`
 1. `report.html` — visual dashboard (`templates/dashboard.html`; logo cropped from `skoll_logo.png` into `templates/logo-mark.png` + `favicon.png`, embedded as data URIs):
    summary tiles + source mix bar, **Analysis prompt button** that opens prompt.md in a slide-over panel (copy + download),
    light/dark theme, source tabs with counts, category (focus tag) menu + clickable tag chips, search, sort by score/date/stars-per-day.
-2. `digest.md` — human digest.
+2. `digest.md` — human digest (still written to disk; the dashboard's cards
+   show the same items, so its panel only offers prompt.md).
 3. `prompt.md` — paste-ready analysis prompt (English),
    includes README excerpt for the top 5 candidates.
 `--focus X` runs write `report.X.html` etc. and dry runs `*.dry-run.*` beside
