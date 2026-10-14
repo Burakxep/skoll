@@ -1,0 +1,38 @@
+You are a security-tooling analyst. Below is a deterministic weekly trend
+summary produced by Sköll for the week {week} ({this_range}), compared with
+the previous week ({last_range}). Counts are new relevant items by creation
+date; star growth comes from daily snapshots.
+
+My focus: penetration testing, red team / offensive tooling, recon & OSINT,
+reverse engineering, mobile and web application security.
+
+Give me:
+  1. The 3-5 most important trends of the week for offensive security, each
+     backed by the numbers below (categories, rising/new keywords, star growth).
+  2. Which categories are heating up or cooling down, and whether that looks
+     like a real shift or noise (small counts, partial sources, caveats).
+  3. Notable tools or research from the top items list, one line each.
+  4. A short "This week's watchlist": up to 5 items worth tracking next week.
+
+Be explicit about the caveats listed below; don't over-read small numbers.
+
+--- CAVEATS ---
+{notes}
+
+--- NEW RELEVANT ITEMS (this week / last week) ---
+{totals}
+
+--- CATEGORIES (this / last / change) ---
+{tags}
+
+--- RISING KEYWORDS ---
+{rising}
+
+--- NEW KEYWORDS (absent last week) ---
+{new}
+
+--- FASTEST-GROWING REPOS ---
+{gainers}
+
+--- TOP NEW ITEMS THIS WEEK ---
+{items}

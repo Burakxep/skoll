@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sköll weekly · __PROFILE__ · __WEEK__</title>
+<link rel="icon" type="image/png" href="__FAVICON__">
+<style>
+__THEME_CSS__
+
+  main { padding: 8px 0 56px; }
+  section { margin-top: 28px; }
+  h2 { font-size: 17px; margin: 0 0 4px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  .panel { background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 18px; }
+
+  /* notes */
+  .notes { border-color: var(--sun); background: var(--sun-soft); }
+  .notes ul { margin: 0; padding-left: 18px; }
+  .notes li { margin: 2px 0; font-size: 14px; }
+
+  /* stats */
+  .stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); }
+  .stat .label { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .stat .label .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .stat .value { font-size: 28px; font-weight: 700; line-height: 1.2; margin-top: 4px; }
+  .stat .prev { color: var(--muted); font-size: 13px; }
+  .stat.partial { opacity: .65; }
+
+  /* deltas */
+  .up { color: var(--rss); font-weight: 600; }
+  .down { color: var(--warn); font-weight: 600; }
+  .flat { color: var(--muted); }
+  .newbadge { background: var(--sun-soft); color: var(--sun); border-radius: 6px;
+    padding: 1px 7px; font-size: 12px; font-weight: 600; }
+
+  /* category bars */
+  .bars { display: grid; gap: 14px; }
+  .bar-row { display: grid; grid-template-columns: 120px 1fr 160px; gap: 12px; align-items: center; }
+  .bar-name { font-weight: 600; overflow-wrap: anywhere; }
+  .bar-pair { display: grid; gap: 4px; }
+  .bar { height: 10px; border-radius: 6px; min-width: 2px; }
+  .bar.this { background: var(--sun); }
+  .bar.last { background: var(--border); }
+  .bar-nums { text-align: right; font-size: 13px; white-space: nowrap; }
+  .legend { display: flex; gap: 16px; color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px;
+    border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .legend .l-this::before { background: var(--sun); }
+  .legend .l-last::before { background: var(--border); }
+
+  /* tables */
+  .cols { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px;
+    text-transform: uppercase; letter-spacing: .4px; padding: 0 0 8px; }
+  td { padding: 7px 0; border-top: 1px solid var(--border); }
+  td.num, th.num { text-align: right; white-space: nowrap; padding-left: 10px; }
+  td a { text-decoration: none; overflow-wrap: anywhere; }
+  td a:hover { color: var(--sun); }
+  .empty { color: var(--muted); font-size: 14px; margin: 0; }
+
+  /* top items */
+  .items { display: grid; gap: 10px; }
+  .item { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; }
+  .item:hover { border-color: var(--sun); }
+  .item a { text-decoration: none; font-weight: 600; overflow-wrap: anywhere; }
+  .item a:hover { color: var(--sun); }
+  .item .score { align-self: start; }
+  .item .meta { grid-column: 1 / -1; color: var(--muted); font-size: 13px;
+    display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+  .src { display: inline-flex; align-items: center; gap: 6px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .5px; font-size: 12px; }
+  .src .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .chip { background: var(--surface-2); border-radius: 8px; padding: 1px 8px; font-size: 12px; color: var(--fg); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); font-weight: 600; }
+  .seen { font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    .logo { width: 48px; height: 48px; border-radius: 12px; }
+    .theme-btn .label { display: none; }
+    .bar-row { grid-template-columns: 84px 1fr; gap: 6px 8px; }
+    .bar-nums { grid-column: 1 / -1; text-align: left; }
+  }
+</style>
+__HEAD_JS__
+</head>
+<body>
+<header class="wrap">
+  <div class="head">
+    <div class="brand">
+      <img class="logo" src="__LOGO__" alt="Sköll logo">
+      <div>
+        <h1><span data-i18n="weekly.title">Sköll weekly</span><span class="runes" aria-hidden="true">ᛋᚴᚢᛚ</span></h1>
+        <div class="sub">__SUB__</div>
+      </div>
+    </div>
+    __CONTROLS__
+  </div>
+</header>
+
+<main class="wrap">
+  __NOTES__
+
+  <section>
+    <h2 data-i18n="sec.items">New relevant items</h2>
+    <p class="hint" data-i18n="sec.items.hint">Counted by creation date. Sources marked partial don't reach back to last week and are left out of the comparisons below.</p>
+    <div class="stats">__STATS__</div>
+  </section>
+
+  <section>
+    <h2 data-i18n="sec.tags">Categories</h2>
+    <p class="hint" data-i18n="sec.tags.hint">New items per focus tag, this week against last week.</p>
+    <div class="panel">
+      <div class="legend"><span class="l-this" data-i18n="legend.this">this week</span><span class="l-last" data-i18n="legend.last">last week</span></div>
+      <div class="bars">__TAGS__</div>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-i18n="sec.kw">Keywords</h2>
+    <p class="hint" data-i18n="sec.kw.hint">Weak keywords are ignored. Rising = biggest increase over last week; New = absent last week.</p>
+    <div class="cols">
+      <div class="panel">__RISING__</div>
+      <div class="panel">__NEW__</div>
+      <div class="panel">__ACTIVE__</div>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-i18n="sec.gain">Fastest-growing repos</h2>
+    <p class="hint" data-i18n="sec.gain.hint">Stars gained between the first and last daily snapshot this week.</p>
+    <div class="panel">__GAINERS__</div>
+  </section>
+
+  <section>
+    <h2 data-i18n="sec.top">Top new items this week</h2>
+    <p class="hint" data-i18n="sec.top.hint">Highest scored items created this week, from every source.</p>
+    <p class="hint">__TIER_LEGEND__</p>
+    <div class="items">__ITEMS__</div>
+  </section>
+</main>
+</body>
+</html>

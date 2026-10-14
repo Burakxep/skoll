@@ -1,0 +1,24 @@
+# Secrets & local config
+.env
+config.yaml
+
+# Runtime data & outputs
+data/
+reports/
+*.db
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Claude Code per-user settings
+.claude/settings.local.json

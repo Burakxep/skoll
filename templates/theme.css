@@ -1,0 +1,72 @@
+  :root {
+    --bg: #0b0d12; --surface: #12161e; --surface-2: #1a202b; --border: #252c39;
+    --fg: #e6e9ef; --muted: #8a93a3;
+    --sun: #f5a524; --sun-soft: rgba(245, 165, 36, .14); --on-sun: #1a1206;
+    --wolf: #e6e9ef; --warn: #f2555a; --warn-soft: rgba(242, 85, 90, .14);
+    --github: #a3acbb; --reddit: #ff6a3d; --hackernews: #ff9a3c; --rss: #3ccfa4;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f5f1; --surface: #ffffff; --surface-2: #efede7; --border: #e0dcd3;
+    --fg: #1b1e24; --muted: #626977;
+    --sun: #d9860f; --sun-soft: rgba(217, 134, 15, .12); --on-sun: #ffffff;
+    --wolf: #1b1e24; --warn: #d0353b; --warn-soft: rgba(208, 53, 59, .10);
+    --github: #57606a; --reddit: #e2470f; --hackernews: #e07a10; --rss: #12936e;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }  /* .card's display:flex would override it */
+  body { margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  a { color: inherit; }
+  button, input, select { font: inherit; color: inherit; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+
+  /* header */
+  header { padding: 28px 0 8px; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand > div { min-width: 0; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .logo { width: 56px; height: 56px; flex: none; display: block;
+    border-radius: 14px; background: #000; border: 1px solid var(--border); }
+  h1 { margin: 0; font-size: 24px; letter-spacing: .3px; }
+  h1 .runes { color: var(--muted); font-weight: 400; font-size: 15px; margin-left: 8px; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .theme-btn { height: 44px; min-width: 44px; padding: 0 14px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--surface); cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+  .theme-btn:hover { border-color: var(--sun); }
+  /* score tiers: relative to the source's own threshold */
+  .score { font-weight: 700; border-radius: 8px; padding: 2px 10px; font-size: 13px;
+    background: var(--sun-soft); color: var(--sun); }
+  .score.mid { background: var(--surface-2); color: var(--muted); }
+  .score.high { background: var(--sun-soft); color: var(--sun); }
+  .score.top { background: var(--sun); color: var(--on-sun); }
+  .tier-legend { display: inline-flex; gap: 12px; align-items: center; color: var(--muted); font-size: 13px; }
+  .tier-legend .score { padding: 0 8px; font-size: 12px; font-weight: 600; }
+  .tier-btn { border: 0; background: none; padding: 0; cursor: pointer; border-radius: 10px; }
+  .tier-btn .score { display: inline-flex; align-items: center; gap: 6px; height: 32px;
+    padding: 0 12px; font-size: 13px; border-radius: 10px; border: 1px solid transparent;
+    transition: opacity .15s, border-color .15s; }
+  .tier-btn .n { font-weight: 500; opacity: .8; }
+  .tier-btn:hover .score { border-color: var(--sun); }
+  .tier-btn:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+  .tier-legend.filtering .tier-btn[aria-pressed="false"] .score { opacity: .45; }
+  .tier-btn[aria-pressed="true"] .score { border-color: var(--fg); }
+  /* breakout: an already-reported repo whose stars exploded */
+  .chip.boom { background: var(--sun); color: var(--on-sun); font-weight: 600; }
+  .boom { font-size: 13px; font-weight: 600; color: var(--sun); }
+  .card.breakout { border-color: var(--sun); }
+  .controls { display: flex; align-items: center; gap: 10px; flex: none; }
+  @media (max-width: 640px) {
+    .head { flex-wrap: wrap; gap: 12px; }
+    .brand { flex: 1 1 100%; }
+    .controls { margin-left: auto; }
+  }
+  .lang { display: inline-flex; height: 44px; padding: 4px; gap: 4px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--surface); }
+  .lang-btn { min-width: 44px; border: 0; border-radius: 8px; background: transparent;
+    cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .lang-btn:hover { color: var(--fg); }
+  .lang-btn[aria-pressed="true"] { background: var(--sun); color: var(--on-sun); }
+  .lang-btn:focus-visible { outline: 2px solid var(--sun); outline-offset: 1px; }

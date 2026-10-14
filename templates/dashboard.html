@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sköll · __PROFILE__ · __DATE__</title>
+<link rel="icon" type="image/png" href="__FAVICON__">
+<style>
+__THEME_CSS__
+
+  /* toolbar */
+  .toolbar { position: sticky; top: 0; z-index: 5; background: var(--bg);
+    padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tab { height: 44px; padding: 0 18px; border-radius: 12px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface);
+    display: inline-flex; align-items: center; gap: 10px; font-size: 15px;
+    font-weight: 500; transition: border-color .15s, background .15s; }
+  .tab:hover { border-color: var(--sun); }
+  .tab .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .tab .n { min-width: 26px; padding: 1px 8px; border-radius: 999px;
+    background: var(--surface-2); color: var(--muted); font-size: 13px; text-align: center; }
+  .tab[aria-selected="true"] { background: var(--sun); border-color: var(--sun); color: var(--on-sun); }
+  .tab[aria-selected="true"] .n { background: rgba(0, 0, 0, .14); color: inherit; }
+  .tab:disabled { opacity: .45; cursor: default; }
+  .tools { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+  .search { height: 44px; width: 260px; max-width: 100%; padding: 0 14px;
+    border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
+  .search:focus, .sort:focus, .chip:focus-visible, .tab:focus-visible, .theme-btn:focus-visible {
+    outline: 2px solid var(--sun); outline-offset: 1px; }
+  .sort.active { border-color: var(--sun); color: var(--sun); }
+  .sort { height: 44px; padding: 0 12px; border-radius: 12px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); }
+  .status-row { display: flex; flex-wrap: wrap; justify-content: space-between;
+    align-items: center; gap: 8px 16px; padding: 12px 0 0; }
+  .status { color: var(--muted); font-size: 13px; }
+
+  /* cards */
+  main { padding: 16px 0 48px; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .card:hover { border-color: var(--sun); }
+  .card.suspicious { border-color: var(--warn); }
+  .top { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+  .src { display: inline-flex; align-items: center; gap: 6px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .5px; font-size: 12px; }
+  .src .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .top .score { margin-left: auto; }
+  .card h2 { margin: 0; font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
+  .card h2 a { text-decoration: none; }
+  .card h2 a:hover { color: var(--sun); }
+  .desc { margin: 0; color: var(--fg); opacity: .85; font-size: 14px;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .stats { color: var(--muted); font-size: 13px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--surface-2); border: 1px solid transparent; border-radius: 8px;
+    padding: 3px 10px; font-size: 12px; cursor: pointer; }
+  .chip:hover { border-color: var(--sun); }
+  .chip.on { background: var(--sun-soft); color: var(--sun); border-color: var(--sun); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); font-weight: 600; }
+  .repo { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .repo a:hover { color: var(--sun); }
+  .kw { font-size: 12px; color: var(--muted); }
+  .empty { color: var(--muted); text-align: center; padding: 60px 0; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    header { padding-top: 20px; }
+    .logo { width: 48px; height: 48px; border-radius: 12px; }
+    .tabs { flex-wrap: nowrap; overflow-x: auto; width: 100%; padding-bottom: 2px; }
+    .tab { flex: none; padding: 0 14px; }
+    .tools { width: 100%; margin-left: 0; flex-wrap: wrap; }
+    .search { flex: 1 1 100%; width: auto; min-width: 0; }
+    .sort { flex: 1 1 0; min-width: 0; }
+    .theme-btn .label { display: none; }
+  }
+</style>
+__HEAD_JS__
+</head>
+<body>
+<header class="wrap">
+  <div class="head">
+    <div class="brand">
+      <img class="logo" src="__LOGO__" alt="Sköll logo">
+      <div>
+        <h1>Sköll<span class="runes" aria-hidden="true">ᛋᚴᚢᛚ</span></h1>
+        <div class="sub">__SUB__</div>
+      </div>
+    </div>
+    __CONTROLS__
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="wrap">
+    <div class="bar">
+      <nav class="tabs" id="tabs" role="tablist" aria-label="Source">__TABS__</nav>
+      <div class="tools">
+        <input class="search" id="q" type="search" placeholder="Search title, description, keywords…" data-i18n-ph="search.ph" aria-label="Search" data-i18n-aria="search.ph">
+        <select class="sort" id="cat" aria-label="Category" data-i18n-aria="cat.aria">
+          <option value="all" data-i18n="cat.all">All categories</option>
+        </select>
+        <select class="sort" id="sort" aria-label="Sort" data-i18n-aria="sort.aria">
+          <option value="score" data-i18n="sort.score">Sort: score</option>
+          <option value="date" data-i18n="sort.date">Sort: newest</option>
+          <option value="spd" data-i18n="sort.spd">Sort: stars/day</option>
+        </select>
+      </div>
+    </div>
+    <div class="status-row">
+      <div class="status" id="status"></div>
+      __TIER_LEGEND__
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="grid" id="grid">__CARDS__</div>
+  <p class="empty" id="empty" data-i18n="empty" hidden>No items match this view.</p>
+</main>
+
+<script>
+(function () {
+  var grid = document.getElementById("grid");
+  var cards = Array.prototype.slice.call(grid.querySelectorAll(".card"));
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+  var q = document.getElementById("q");
+  var sort = document.getElementById("sort");
+  var cat = document.getElementById("cat");
+  var state = { src: "all", cat: "all", tier: "all", q: "", sort: "score" };
+  var tierBtns = Array.prototype.slice.call(document.querySelectorAll(".tier-btn"));
+
+  // Category menu: every focus tag present in today's cards, most common first,
+  // "suspicious" last.
+  function tagsOf(c) { return c.dataset.tags ? c.dataset.tags.split(" ") : []; }
+  var tagTotals = {};
+  cards.forEach(function (c) {
+    tagsOf(c).forEach(function (t) { tagTotals[t] = (tagTotals[t] || 0) + 1; });
+  });
+  Object.keys(tagTotals).sort(function (a, b) {
+    var rank = function (t) { return t === "breakout" ? -1 : t === "suspicious" ? 1 : 0; };
+    if (rank(a) !== rank(b)) return rank(a) - rank(b);
+    return tagTotals[b] - tagTotals[a] || a.localeCompare(b);
+  }).forEach(function (t) {
+    var o = document.createElement("option");
+    o.value = t; o.dataset.label = t;
+    cat.appendChild(o);
+  });
+  var catOptions = Array.prototype.slice.call(cat.options);
+
+  function matchesQuery(c) {
+    return !state.q || c.dataset.text.indexOf(state.q) !== -1;
+  }
+
+  function render() {
+    var key = state.sort;
+    cards.sort(function (a, b) {
+      if (key === "date") return (b.dataset.date || "").localeCompare(a.dataset.date || "");
+      return parseFloat(b.dataset[key] || 0) - parseFloat(a.dataset[key] || 0);
+    });
+    // Each control's counts apply every OTHER active filter, so every number
+    // reads "what you'd get if you click".
+    var shown = 0, counts = { all: 0 }, catCounts = { all: 0 }, tierCounts = {};
+    cards.forEach(function (c) {
+      grid.appendChild(c);
+      var okQ = matchesQuery(c);
+      var okSrc = state.src === "all" || c.dataset.source === state.src;
+      var tags = tagsOf(c);
+      var okCat = state.cat === "all" || tags.indexOf(state.cat) !== -1;
+      var okTier = state.tier === "all" || c.dataset.tier === state.tier;
+      if (okQ && okCat && okTier) {
+        counts.all++;
+        counts[c.dataset.source] = (counts[c.dataset.source] || 0) + 1;
+      }
+      if (okQ && okSrc && okTier) {
+        catCounts.all++;
+        tags.forEach(function (t) { catCounts[t] = (catCounts[t] || 0) + 1; });
+      }
+      if (okQ && okSrc && okCat) {
+        tierCounts[c.dataset.tier] = (tierCounts[c.dataset.tier] || 0) + 1;
+      }
+      var visible = okQ && okSrc && okCat && okTier;
+      c.hidden = !visible;
+      if (visible) shown++;
+      Array.prototype.forEach.call(c.querySelectorAll(".chip"), function (ch) {
+        ch.classList.toggle("on", ch.dataset.tag === state.cat);
+      });
+    });
+    catOptions.forEach(function (o) {
+      if (o.value !== "all") o.textContent = o.dataset.label + " (" + (catCounts[o.value] || 0) + ")";
+    });
+    tierBtns.forEach(function (b) {
+      b.querySelector(".n").textContent = tierCounts[b.dataset.tier] || 0;
+      b.setAttribute("aria-pressed", b.dataset.tier === state.tier ? "true" : "false");
+    });
+    document.querySelector(".tier-legend").classList.toggle("filtering", state.tier !== "all");
+    cat.value = state.cat;
+    cat.classList.toggle("active", state.cat !== "all");
+    tabs.forEach(function (t) {
+      var n = counts[t.dataset.src] || 0;
+      t.querySelector(".n").textContent = n;
+      t.setAttribute("aria-selected", t.dataset.src === state.src ? "true" : "false");
+    });
+    document.getElementById("empty").hidden = shown > 0;
+    document.getElementById("status").textContent =
+      window.skollT("status", { shown: shown, total: cards.length });
+  }
+
+  tabs.forEach(function (t) {
+    t.onclick = function () { state.src = t.dataset.src; render(); };
+  });
+  q.oninput = function () { state.q = q.value.trim().toLowerCase(); render(); };
+  sort.onchange = function () { state.sort = sort.value; render(); };
+  cat.onchange = function () { state.cat = cat.value; render(); };
+  // Score-colour legend doubles as a filter; clicking the active one clears it.
+  tierBtns.forEach(function (b) {
+    b.onclick = function () {
+      state.tier = state.tier === b.dataset.tier ? "all" : b.dataset.tier;
+      render();
+    };
+  });
+  // Clicking a tag on a card selects that category; clicking it again clears it.
+  grid.addEventListener("click", function (ev) {
+    var ch = ev.target.closest(".chip");
+    if (!ch) return;
+    state.cat = state.cat === ch.dataset.tag ? "all" : ch.dataset.tag;
+    render();
+  });
+  document.addEventListener("skoll:lang", render);
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+# Sköll configuration.
+# Copy this to config.yaml and edit freely. config.yaml is gitignored, so your
+# personal sources/keywords never get committed.
+#
+# The tool itself is topic-agnostic: a "profile" is just keyword lists + sources.
+# Add as many profiles as you like (crypto, devops, llm-tooling, ...).
+
+settings:
+  score_threshold:          # minimum score to appear in a report, per source.
+    github: 10.0            # GitHub scores include star momentum, so its
+    hackernews: 8.0         # scale runs higher than Reddit/blogs
+    reddit: 4.0
+    rss: 4.0
+    default: 3.0
+  exclude_override: 4.0     # relevance needed to survive an exclude-keyword hit
+  min_relevance: 2.0        # keyword relevance needed regardless of momentum
+                            # (stops viral off-topic repos riding on stars/day)
+  score_tiers:              # dashboard colours, as multiples of the source's
+    top: 2.5                # threshold (GitHub 10 -> top >= 25, Reddit 4 -> 10)
+    high: 1.5
+  breakout:                 # already-reported repo comes back when, since it
+    min_gain: 500           # was last reported, it gained >= min_gain stars
+    ratio: 5                # AND reached >= ratio x its stars back then
+  cve_cluster_min: 3        # same author with >= N CVE repos -> "suspicious" tag
+  focus_min_hits: 2         # keywords needed to assign a focus tag, unless the
+                            # hit is in the title/topics
+  max_items: 70             # safety cap per report (no fixed minimum)
+  max_per_source:           # slots per source, so momentum-less sources
+    github: 30              # (reddit, blogs) aren't crowded out by GitHub
+    hackernews: 10
+    reddit: 20
+    rss: 10
+  require_repo_link: [reddit]   # only keep posts from these sources that link
+                                # a GitHub/GitLab/Codeberg repo (drops Q&A/chatter)
+  source_bonus:             # relevance added to every item from a source
+    rss: 3.0                # curated research blogs: on-topic by construction
+  weights:                  # momentum weights apply to log2(1 + metric)
+    include: 2.0
+    exclude: 3.0
+    focus: 1.5
+    repo_link: 2.0          # non-GitHub item that links a code repo
+    stars_per_day: 1.0
+    stars: 0.5
+    points: 0.5
+    comments: 0.3
+
+# Noise that applies to every profile.
+global_exclude:
+  - awareness
+  - newsletter
+  - cheatsheet
+  - roadmap
+  - "awesome-"
+  - interview
+  - certification-guide
+
+profiles:
+
+  cybersec:
+    # Which sources to pull for this profile.
+    sources: [github, hackernews, reddit, rss]
+
+    # Positive relevance signal (generic security terms).
+    include:
+      - pentest
+      - penetration-testing
+      - offensive-security
+      - exploit
+      - vulnerability
+      - security-tool
+      - red-team
+      - bug-bounty
+      - reverse-engineering
+      - malware-analysis
+      - rce
+      - cve
+      - poc
+
+    # Only count when some other keyword also hits (alone they match game
+    # mods, gadget hacks, ...).
+    weak_keywords:
+      - reverse-engineering
+
+    # Profile-specific noise to push down (merged with global_exclude).
+    exclude:
+      - soc
+      - siem
+      - firewall
+      - compliance
+      - gdpr
+      - security-awareness
+      - antivirus
+
+    # Focus tags — a repo can match several. redteam & recon are the fullest,
+    # per your priority; the rest are lighter and easy to expand later.
+    focus_tags:
+      redteam:
+        - c2
+        - command-and-control
+        - implant
+        - beacon
+        - evasion
+        - edr-bypass
+        - edr-evasion
+        - av-bypass
+        - initial-access
+        - lateral-movement
+        - privilege-escalation
+        - persistence
+        - payload
+        - shellcode
+        - process-injection
+        - obfuscation
+        - phishing
+        - adversary
+      recon:
+        - osint
+        - recon
+        - reconnaissance
+        - subdomain
+        - subdomain-enumeration
+        - asset-discovery
+        - attack-surface
+        - port-scanner
+        - fingerprinting
+        - dns-enumeration
+        - email-harvest
+        - google-dork
+        - crawler
+      mobile:
+        - frida
+        - android
+        - ios
+        - apk
+        - mobile-security
+        - objection
+      appsec:
+        - sast
+        - dast
+        - fuzzing
+        - fuzzer
+        - burp
+        - web-security
+        - api-security
+        - sql-injection
+        - xss
+      blueteam:
+        - detection
+        - dfir
+        - threat-hunting
+        - incident-response
+        - yara
+        - sigma
+      reversing:
+        - disassembler
+        - decompiler
+        - debugger
+        - anti-debug
+        - ghidra
+        - ida
+        - radare2
+        - rizin
+        - binary-ninja
+        - bytecode
+        - binaries
+        - injector
+        - instrumentation
+        - unpacker
+        - deobfuscator
+        - elf
+        - mach-o
+      purpleteam:
+        - adversary-emulation
+        - atomic-red-team
+        - caldera
+        - detection-engineering
+
+    github:
+      queries:
+        - "pentest OR penetration-testing OR offensive-security"
+        - "red-team OR c2 OR implant OR evasion"
+        - "recon OR osint OR subdomain OR attack-surface"
+        - "exploit OR vulnerability OR reverse-engineering"
+      created_within_days: 14
+      max_repo_age_days: 60     # hard cap: ignore repos created before this,
+                                # even if they're still active and popular
+      created_slice_days: 7     # query new repos week by week, so recent ones
+                                # aren't pushed out by older, starrier ones
+      min_stars: 3
+      per_page: 100             # max allowed; same number of requests
+      fetch_readme_top: 5
+
+    hackernews:
+      queries: [pentest, exploit, "reverse engineering", osint, "red team"]
+      within_days: 14           # 2 weeks so the weekly report can compare
+      min_points: 5
+
+    # Fetched as ONE multireddit RSS request (Reddit 403s keyless .json and
+    # allows ~1 RSS request/min). RSS has no upvote counts, so no min_score.
+    reddit:
+      listing: new              # new | hot | top (top = top of the week)
+      within_days: 7
+      subreddits:
+        - netsec
+        - ReverseEngineering
+        - redteamsec
+        - AskNetsec
+        - bugbounty
+        - Malware
+      limit: 100                # max per request, shared by all subreddits
+
+    rss:
+      within_days: 14
+      feeds:
+        - https://googleprojectzero.blogspot.com/feeds/posts/default
+        - https://portswigger.net/research/rss
+        - https://posts.specterops.io/feed
+        - https://www.outflank.nl/blog/feed/
+        - https://blog.assetnote.io/feeds/rss.xml
+        - https://www.trustedsec.com/feed/
+        - https://labs.watchtowr.com/rss/
+        - https://blog.includesecurity.com/feed/
+
+  # --- example of a second, totally different profile (edit or delete) ---
+  # llm-tooling:
+  #   sources: [github, hackernews]
+  #   include: [llm, agent, rag, inference, finetune, prompt]
+  #   exclude: [chatbot-demo, wrapper]
+  #   focus_tags:
+  #     agents: [agent, autonomous, tool-use]
+  #     infra:  [inference, serving, quantization]
+  #   github:
+  #     queries: ["llm agent OR rag", "inference OR quantization"]
+  #     created_within_days: 10
