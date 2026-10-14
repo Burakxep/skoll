@@ -65,7 +65,64 @@ __THEME_CSS__
   .kw { font-size: 12px; color: var(--muted); }
   .empty { color: var(--muted); text-align: center; padding: 60px 0; }
 
+  /* header actions + summary */
+  .actionbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px;
+    padding: 10px 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; }
+  .actionbar .grow { display: none; }
+  .act-btn { height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); font-size: 14px;
+    font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
+  .act-btn:hover { border-color: var(--sun); color: var(--sun); }
+  .act-btn:focus-visible { outline: 2px solid var(--sun); outline-offset: 1px; }
+  .kpis { display: grid; gap: 12px; padding: 18px 0 4px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 12px 16px; }
+  .kpi b { display: block; font-size: 26px; line-height: 1.2; }
+  .kpi span { color: var(--muted); font-size: 13px; }
+  .kpi.hot b { color: var(--sun); }
+  .kpi.alert b { color: var(--warn); }
+  .mix { background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 12px 16px; margin-top: 12px; }
+  .mix-bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden;
+    background: var(--surface-2); }
+  .mix-bar i { display: block; height: 100%; }
+  .mix-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px;
+    font-size: 13px; color: var(--muted); }
+  .mix-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 6px; }
+
+  /* slide-over panel (digest.md / prompt.md) */
+  .scrim { position: fixed; inset: 0; background: rgba(0, 0, 0, .5); z-index: 20; }
+  .panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 21;
+    width: min(720px, 100%); background: var(--bg); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; }
+  .panel-head { display: flex; align-items: center; gap: 8px; padding: 14px 16px;
+    border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .panel-tabs { display: flex; gap: 6px; }
+  .ptab { height: 38px; padding: 0 14px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); font-weight: 600; }
+  .ptab[aria-selected="true"] { background: var(--sun); border-color: var(--sun); color: var(--on-sun); }
+  .panel-tools { display: flex; gap: 6px; margin-left: auto; }
+  .pbtn { height: 38px; padding: 0 12px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); }
+  .pbtn:hover { border-color: var(--sun); }
+  .panel-hint { margin: 0; padding: 10px 16px 0; color: var(--muted); font-size: 13px; }
+  .panel-body { flex: 1; overflow: auto; padding: 16px 20px 40px; }
+  .panel-body h1 { font-size: 20px; margin: 0 0 12px; }
+  .panel-body h3 { font-size: 16px; margin: 22px 0 4px; overflow-wrap: anywhere; }
+  .panel-body h3 a { color: var(--sun); }
+  .panel-body p { margin: 4px 0; overflow-wrap: anywhere; }
+  .panel-body em { color: var(--muted); }
+  .panel-body code { background: var(--surface-2); border-radius: 6px; padding: 1px 6px; font-size: 13px; }
+  .panel-body pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere;
+    font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
   @media (max-width: 640px) {
+    .actionbar .act-btn { flex: 1 1 100%; justify-content: center; }
+    .actionbar .grow { display: none; }
+    .controls { margin-left: auto; }
     .wrap { padding: 0 16px; }
     header { padding-top: 20px; }
     .logo { width: 48px; height: 48px; border-radius: 12px; }
@@ -91,7 +148,30 @@ __HEAD_JS__
     </div>
     __CONTROLS__
   </div>
+  __KPIS__
+  <div class="actionbar">
+    <!--SKOLL_RUNBAR-->
+    <span class="grow"></span>
+    __ACTIONS__
+  </div>
 </header>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Report files" hidden>
+  <div class="panel-head">
+    <div class="panel-tabs" role="tablist">
+      <button class="ptab" type="button" role="tab" data-doc="prompt" data-i18n="panel.prompt">prompt.md</button>
+    </div>
+    <div class="panel-tools">
+      <button class="pbtn" type="button" id="p-copy" data-i18n="panel.copy">Copy</button>
+      <button class="pbtn" type="button" id="p-dl" data-i18n="panel.download">Download</button>
+      <button class="pbtn" type="button" id="p-close" aria-label="Close" data-i18n-aria="panel.close">✕</button>
+    </div>
+  </div>
+  <p class="panel-hint" id="p-hint"></p>
+  <div class="panel-body" id="p-body"></div>
+</aside>
+<script type="application/json" id="docs">__DOCS__</script>
 
 <div class="toolbar">
   <div class="wrap">
@@ -230,6 +310,67 @@ __HEAD_JS__
   });
   document.addEventListener("skoll:lang", render);
   render();
+
+  // ---- slide-over: the day's digest.md / prompt.md without leaving the page
+  var docs = {};
+  try { docs = JSON.parse(document.getElementById("docs").textContent); } catch (e) {}
+  var panel = document.getElementById("panel");
+  var scrim = document.getElementById("scrim");
+  var body = document.getElementById("p-body");
+  var hint = document.getElementById("p-hint");
+  var ptabs = Array.prototype.slice.call(panel.querySelectorAll(".ptab"));
+  var cur = "prompt";
+
+  function show(which) {
+    cur = which;
+    ptabs.forEach(function (t) {
+      t.setAttribute("aria-selected", t.dataset.doc === which ? "true" : "false");
+    });
+    var text = docs[which] || "";
+    body.innerHTML = "<pre></pre>";
+    body.firstChild.textContent = text;
+    hint.textContent = window.skollT("panel.prompt.hint");
+    body.scrollTop = 0;
+  }
+  function open(which) {
+    show(which);
+    panel.hidden = false; scrim.hidden = false;
+    document.getElementById("p-close").focus();
+  }
+  function close() { panel.hidden = true; scrim.hidden = true; }
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-open-doc]"), function (b) {
+    b.onclick = function () { open(b.dataset.openDoc); };
+  });
+  ptabs.forEach(function (t) { t.onclick = function () { show(t.dataset.doc); }; });
+  scrim.onclick = close;
+  document.getElementById("p-close").onclick = close;
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && !panel.hidden) close();
+  });
+  document.getElementById("p-copy").onclick = function () {
+    var btn = this, text = docs[cur] || "";
+    var done = function () {
+      btn.textContent = window.skollT("panel.copied");
+      setTimeout(function () { btn.textContent = window.skollT("panel.copy"); }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () {});
+    } else {
+      var ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+  };
+  document.getElementById("p-dl").onclick = function () {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([docs[cur] || ""], { type: "text/markdown" }));
+    a.download = cur + ".md";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  };
+  document.addEventListener("skoll:lang", function () { if (!panel.hidden) show(cur); });
 })();
 </script>
 </body>

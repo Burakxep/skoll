@@ -29,6 +29,7 @@ cp config.example.yaml config.yaml      # first time
 python -m skoll run --profile cybersec  # daily run
 python -m skoll run --profile cybersec --focus redteam
 python -m skoll check --profile cybersec   # dry-run, no history writes
+python -m skoll serve                     # local web app: dashboard with a Run button in the header
 python -m skoll add-source --profile cybersec --subreddit redteamsec
 python -m skoll weekly --profile cybersec   # weekly trends (--no-fetch: offline)
 python -m unittest                        # offline tests, stdlib only

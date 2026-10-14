@@ -1,0 +1,83 @@
+<style>
+  .actionbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px;
+    padding: 10px 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; }
+  .actionbar .grow { display: none; }
+  .act-btn { height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface-2); font-weight: 600;
+    display: inline-flex; align-items: center; gap: 8px; }
+  .act-btn:hover { border-color: var(--sun); color: var(--sun); }
+  .runbar { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .runbar select { height: 44px; padding: 0 10px; border-radius: 12px; max-width: 150px;
+    border: 1px solid var(--border); background: var(--surface); }
+  .runbar .dry { display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+    color: var(--muted); white-space: nowrap; }
+  .runbar .run { height: 44px; padding: 0 18px; border-radius: 12px; cursor: pointer;
+    border: 0; background: var(--sun); color: var(--on-sun); font-weight: 700; }
+  .runbar .run:disabled { opacity: .55; cursor: default; }
+  .runbar .run:focus-visible, .runbar select:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+  @media (max-width: 700px) {
+    .runbar { width: 100%; }
+    .runbar select { flex: 1 1 120px; max-width: none; }
+    .runbar .run { flex: 1 1 100%; }
+  }
+  .runlog { position: fixed; right: 16px; bottom: 16px; z-index: 30; width: min(560px, calc(100% - 32px));
+    max-height: 40vh; overflow: auto; margin: 0; padding: 12px 14px; border-radius: 12px;
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; }
+  .runlog .err { color: var(--warn); }
+</style>
+<div class="runbar">
+  <select id="rb-profile" aria-label="Profile" data-i18n-aria="app.profile">__PROFILES__</select>
+  <select id="rb-focus" aria-label="Focus" data-i18n-aria="app.focus">
+    <option value="" data-i18n="app.focus.any">Any</option>__FOCUS__
+  </select>
+  <label class="dry"><input type="checkbox" id="rb-dry"><span data-i18n="app.dry">Dry run (don't write history)</span></label>
+  <button class="run" id="rb-run" type="button" data-i18n="app.run">▶ Run</button>
+</div>
+<pre class="runlog" id="rb-log" hidden></pre>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var T = function (k) { return (window.skollT || function (x) { return x; })(k); };
+  var timer = null;
+  $("rb-profile").onchange = function () {
+    location.href = "/?profile=" + encodeURIComponent(this.value);
+  };
+  function idle() {
+    clearInterval(timer); timer = null;
+    $("rb-run").disabled = false; $("rb-run").textContent = T("app.run");
+  }
+  function poll() {
+    fetch("/api/status").then(function (r) { return r.json(); }).then(function (s) {
+      var log = $("rb-log");
+      log.hidden = false;
+      log.textContent = s.log.join("\n");
+      log.scrollTop = log.scrollHeight;
+      if (s.state === "running") return;
+      idle();
+      if (s.state === "done") { location.reload(); return; }
+      var e = document.createElement("div");
+      e.className = "err"; e.textContent = s.error; log.appendChild(e);
+    });
+  }
+  $("rb-run").onclick = function () {
+    $("rb-run").disabled = true; $("rb-run").textContent = T("app.running");
+    fetch("/api/run", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile: $("rb-profile").value, focus: $("rb-focus").value || null,
+                             dry_run: $("rb-dry").checked })
+    }).then(function (r) { return r.json().then(function (d) { return [r.ok, d]; }); })
+      .then(function (res) {
+        if (!res[0]) {
+          $("rb-log").hidden = false; $("rb-log").textContent = res[1].error || "error";
+          idle(); return;
+        }
+        timer = setInterval(poll, 1000); poll();
+      });
+  };
+  document.addEventListener("skoll:lang", function () {
+    if (!$("rb-run").disabled) $("rb-run").textContent = T("app.run");
+  });
+})();
+</script>

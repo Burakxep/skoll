@@ -2,6 +2,7 @@
 
   python -m skoll run --profile cybersec [--focus redteam] [--dry-run]
   python -m skoll list-profiles
+  python -m skoll serve [--port 8765]
   python -m skoll add-source --profile cybersec --subreddit redteamsec
   python -m skoll add-source --profile cybersec --feed https://example.com/rss
   python -m skoll check --profile cybersec
@@ -42,6 +43,12 @@ def _cmd_run(args) -> int:
     else:
         print(f"\n  → Paste this into an AI Agent for analysis:")
         print(f"    reports/{args.profile}/latest.prompt.md")
+    return 0
+
+
+def _cmd_serve(args) -> int:
+    from .server import serve
+    serve(port=args.port, config_path=args.config, open_browser=not args.no_browser)
     return 0
 
 
@@ -137,6 +144,7 @@ examples:
   python -m skoll run --profile cybersec --focus recon   only items tagged recon
   python -m skoll check --profile cybersec               test sources, no history
   python -m skoll weekly --profile cybersec              this week vs last week
+  python -m skoll serve                                  web app with a Run button
   python -m skoll add-source --profile cybersec --subreddit redteamsec
 
 outputs:
@@ -239,6 +247,15 @@ def _parser() -> argparse.ArgumentParser:
     a.add_argument("--query", metavar="QUERY", help="GitHub search query")
     a.set_defaults(func=_cmd_add_source)
 
+    sv = sub.add_parser(
+        "serve", help="local web app with a Run button",
+        formatter_class=fmt,
+        description="Start a local web app (127.0.0.1 only). Pick a profile, press "
+                    "Run, and the\nscan's dashboard is rendered in the page.")
+    sv.add_argument("--port", type=int, default=8765, help="port (default 8765)")
+    sv.add_argument("--no-browser", action="store_true", help="don't open the browser")
+    sv.set_defaults(func=_cmd_serve)
+
     l = sub.add_parser("list-profiles", help="list the profiles in the config",
                        description="List the profiles in the config and their sources.")
     l.set_defaults(func=_cmd_list)
@@ -246,9 +263,14 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
+    for stream in (sys.stdout, sys.stderr):  # Windows consoles default to a legacy codepage
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
     p = _parser()
     args = p.parse_args(argv)
-    if not args.cmd:            # bare 'python -m skoll': show help, not an error
+    if not args.cmd:           # bare 'python -m skoll': show help, not an error
         p.print_help()
         return 0
     if args.cmd == "add-source" and not (args.subreddit or args.feed or args.query):

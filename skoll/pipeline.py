@@ -117,7 +117,7 @@ def run_profile(profile_name: str, profile: dict[str, Any], *,
         breakouts = detect_breakouts(old, baselines, profile, focus=focus)
         if breakouts:
             print(f"  {len(breakouts)} breakout(s): " + ", ".join(
-                f"{it.title} {it.raw['breakout']['from']}→{it.stars}★" for it in breakouts))
+                f"{it.title} {it.raw['breakout']['from']}->{it.stars} stars" for it in breakouts))
             ranked = sorted(ranked + breakouts, key=lambda x: x.score, reverse=True)
 
     # 4. record only what gets reported; the rest is re-scored tomorrow

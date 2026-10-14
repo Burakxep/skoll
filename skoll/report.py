@@ -1,5 +1,6 @@
 """Produces three dated outputs per run, one folder per day:
-  1. reports/<profile>/<date>/report.html - visual dashboard, filterable
+  1. reports/<profile>/<date>/report.html - visual dashboard, filterable; its
+     Analysis prompt button opens 3 in a panel (copy/download)
   2. reports/<profile>/<date>/digest.md   - human digest (compact, linkable)
   3. reports/<profile>/<date>/prompt.md   - ready-to-paste analysis prompt
 A --focus run adds the tag to the names (report.redteam.html, ...) and a
@@ -189,8 +190,46 @@ def page_fills() -> dict[str, str]:
     }
 
 
-def build_html(items: list[Item], profile_name: str, date: str) -> str:
+def _kpis(items: list[Item]) -> str:
+    """Summary tiles + per-source mix bar shown above the cards."""
+    def tile(key: str, n: int, cls: str = "") -> str:
+        return f'<div class="kpi {cls}"><b>{n}</b>{i18n(key)}</div>'
+
+    tiles = [
+        tile("kpi.items", len(items)),
+        tile("kpi.top", sum(1 for it in items if it.tier == "top"), "hot"),
+        tile("kpi.strong", sum(1 for it in items if it.tier == "high")),
+        tile("kpi.breakout", sum(1 for it in items if "breakout" in it.tags), "hot"),
+        tile("kpi.suspicious", sum(1 for it in items if "suspicious" in it.tags), "alert"),
+    ]
+    out = f'<section class="kpis" aria-label="Summary">{"".join(tiles)}</section>'
+    if items:
+        segs, legend = [], []
+        for key, label in _SOURCES:
+            n = sum(1 for it in items if it.source == key)
+            if not n:
+                continue
+            pct = n / len(items) * 100
+            segs.append(f'<i style="width:{pct:.1f}%;background:var(--{key})"></i>')
+            name = i18n("src.rss") if key == "rss" else label
+            legend.append(f'<span><span class="dot" style="background:var(--{key})"></span>'
+                          f'{name} {n}</span>')
+        out += (f'<div class="mix"><div class="mix-bar">{"".join(segs)}</div>'
+                f'<div class="mix-legend">{"".join(legend)}</div></div>')
+    return out
+
+
+ACTIONS = ('<button class="act-btn" type="button" data-open-doc="prompt">'
+           '<span aria-hidden="true">✨</span><span class="txt" data-i18n="btn.prompt">'
+           'Analysis prompt</span></button>')
+
+
+def build_html(items: list[Item], profile_name: str, date: str,
+               prompt: str | None = None) -> str:
     tpl = (TEMPLATES / "dashboard.html").read_text(encoding="utf-8")
+    docs = json.dumps({
+        "prompt": build_prompt(items, date) if prompt is None else prompt,
+    }, ensure_ascii=False).replace("</", "<\\/")
 
     present = {it.source for it in items}
     tabs = ['<button class="tab" type="button" role="tab" data-src="all">'
@@ -213,6 +252,9 @@ def build_html(items: list[Item], profile_name: str, date: str) -> str:
         "__TIER_LEGEND__": tier_legend(clickable=True),
         "__TABS__": "".join(tabs),
         "__CARDS__": cards,
+        "__ACTIONS__": ACTIONS,
+        "__KPIS__": _kpis(items),
+        "__DOCS__": docs,
     }
     for k, v in fills.items():
         tpl = tpl.replace(k, v)
@@ -305,7 +347,8 @@ def write_reports(items: list[Item], profile_name: str,
     }
     digest = build_digest(items, profile_name, date)
     prompt = build_prompt(items, date, readme_top)
-    paths["html"].write_text(build_html(items, profile_name, date), encoding="utf-8")
+    paths["html"].write_text(build_html(items, profile_name, date, prompt),
+                             encoding="utf-8")
     paths["digest"].write_text(digest, encoding="utf-8")
     paths["prompt"].write_text(prompt, encoding="utf-8")
 

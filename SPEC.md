@@ -72,6 +72,7 @@ noise, and produces a dated report plus a ready-to-paste analysis prompt.
 ## Outputs (decided) — all dated, "scan for <date>, found these"
 One folder per day: `reports/<profile>/<date>/`
 1. `report.html` — visual dashboard (`templates/dashboard.html`; logo cropped from `skoll_logo.png` into `templates/logo-mark.png` + `favicon.png`, embedded as data URIs):
+   summary tiles + source mix bar, **Analysis prompt button** that opens prompt.md in a slide-over panel (copy + download),
    light/dark theme, source tabs with counts, category (focus tag) menu + clickable tag chips, search, sort by score/date/stars-per-day.
 2. `digest.md` — human digest.
 3. `prompt.md` — paste-ready analysis prompt (English),
@@ -82,6 +83,15 @@ them, so neither overwrites the day's main report. Real runs also write
 (dry runs never touch them). A second real run on the same day merges: the
 day's report = items reported by earlier runs today (from `observations`,
 `reported=1`) + this run's new finds, so re-running never shrinks it.
+
+## Web app (`skoll/server.py`)
+`python -m skoll serve` starts a stdlib-only server on 127.0.0.1:8765. It serves
+the normal dashboard (same UI, theme and language as report.html) with a Run bar
+(`templates/runbar.html`) injected at the `<!--SKOLL_RUNBAR-->` marker in the
+header: profile / focus / dry-run + **Run**. Run POSTs `/api/run`, the page polls
+`/api/status` for the log, then reloads with the new report. One scan at a time;
+Host-header and JSON-content-type checks guard against DNS-rebinding/CSRF.
+Static report.html files (opened from disk) don't show the bar.
 
 ## Weekly trends (`skoll/weekly.py`)
 - Every real daily run snapshots ALL relevant items (not only reported ones)
