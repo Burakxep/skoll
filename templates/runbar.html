@@ -1,20 +1,36 @@
 <style>
-  .act-btn .txt { display: none; }  /* icon only next to the Run bar; label is the tooltip */
   .runbar { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .runbar select { height: 44px; padding: 0 10px; border-radius: 12px; max-width: 140px;
     border: 1px solid var(--border); background: var(--surface); font-size: 14px; cursor: pointer; }
   .runbar select:hover { border-color: var(--sun); }
-  .runbar .dry { display: inline-flex; align-items: center; gap: 6px; font-size: 14px;
-    color: var(--muted); white-space: nowrap; cursor: pointer; }
-  .runbar .run { height: 44px; padding: 0 18px; border-radius: 12px; cursor: pointer;
-    border: 1px solid var(--sun); background: var(--sun); color: var(--on-sun);
-    font-size: 14px; font-weight: 600; }
-  .runbar .run:disabled { opacity: .55; cursor: default; }
-  .runbar .run:focus-visible, .runbar select:focus-visible { outline: 2px solid var(--sun); outline-offset: 1px; }
+  /* split Run button: primary = normal run, caret = Run / Dry run menu */
+  .runsplit { position: relative; display: inline-flex; }
+  .runsplit .run { height: 44px; padding: 0 18px; border: 1px solid var(--sun);
+    border-radius: 12px 0 0 12px; background: var(--sun); color: var(--on-sun);
+    font-size: 14px; font-weight: 600; cursor: pointer; }
+  .runsplit .run-caret { height: 44px; width: 40px; border: 1px solid var(--sun);
+    border-left-color: rgba(0, 0, 0, .18); border-radius: 0 12px 12px 0;
+    background: var(--sun); color: var(--on-sun); font-size: 13px; cursor: pointer; }
+  .runsplit .run:disabled, .runsplit .run-caret:disabled { opacity: .55; cursor: default; }
+  .runsplit .run:focus-visible, .runsplit .run-caret:focus-visible {
+    outline: 2px solid var(--fg); outline-offset: 2px; }
+  .run-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 40; min-width: 200px;
+    padding: 6px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, .35); display: flex; flex-direction: column; gap: 2px; }
+  .run-menu[hidden] { display: none; }
+  .run-menu button { text-align: left; height: 38px; padding: 0 12px; border: 0; border-radius: 8px;
+    background: transparent; color: var(--fg); font-size: 14px; cursor: pointer; white-space: nowrap; }
+  .run-menu button:hover { background: var(--surface-2); }
+  .runbar .weekly { height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); font-size: 14px;
+    font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+  .runbar .weekly:hover, .runbar .weekly:focus-visible { border-color: var(--sun); color: var(--sun); }
   @media (max-width: 640px) {
     .runbar { width: 100%; }
     .runbar select { flex: 1 1 120px; max-width: none; }
-    .runbar .run { flex: 1 1 100%; }
+    .runsplit { flex: 1 1 100%; }
+    .runsplit .run { flex: 1 1 auto; }
+    .runbar .weekly { flex: 1 1 100%; justify-content: center; }
   }
   .runlog { position: fixed; right: 16px; bottom: 16px; z-index: 30; width: min(560px, calc(100% - 32px));
     max-height: 40vh; overflow: auto; margin: 0; padding: 12px 14px; border-radius: 12px;
@@ -23,12 +39,16 @@
   .runlog .err { color: var(--warn); }
 </style>
 <div class="runbar">
-  <select id="rb-profile" aria-label="Profile" data-i18n-aria="app.profile">__PROFILES__</select>
-  <select id="rb-focus" aria-label="Focus" data-i18n-aria="app.focus">
-    <option value="" data-i18n="app.focus.any">Any</option>__FOCUS__
-  </select>
-  <label class="dry" title="Scan without writing history" data-i18n-title="app.dry.title"><input type="checkbox" id="rb-dry"><span data-i18n="app.dry">Dry run</span></label>
-  <button class="run" id="rb-run" type="button" data-i18n="app.run">▶ Run</button>
+  __PROFILE_CONTROL__
+  <div class="runsplit">
+    <button class="run" id="rb-run" type="button" data-i18n="app.run">▶ Run</button>
+    <button class="run-caret" id="rb-more" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Run options" data-i18n-aria="app.runopts">▾</button>
+    <div class="run-menu" id="rb-menu" role="menu" hidden>
+      <button type="button" role="menuitem" data-dry="0" data-i18n="app.run.normal">Run</button>
+      <button type="button" role="menuitem" data-dry="1" data-i18n="app.run.dry">Dry run (don't write history)</button>
+    </div>
+  </div>
+  <a class="weekly" href="__WEEKLY_HREF__"><span aria-hidden="true">📈</span><span data-i18n="app.weekly">Weekly</span></a>
 </div>
 <pre class="runlog" id="rb-log" hidden></pre>
 <script>
@@ -36,12 +56,17 @@
   var $ = function (id) { return document.getElementById(id); };
   var T = function (k) { return (window.skollT || function (x) { return x; })(k); };
   var timer = null;
-  $("rb-profile").onchange = function () {
+  var prof = $("rb-profile");
+  if (prof && prof.tagName === "SELECT") prof.onchange = function () {
     location.href = "/?profile=" + encodeURIComponent(this.value);
   };
+  var runBtn = $("rb-run"), caret = $("rb-more"), menu = $("rb-menu");
+  function menuOpen(open) {
+    menu.hidden = !open; caret.setAttribute("aria-expanded", open ? "true" : "false");
+  }
   function idle() {
     clearInterval(timer); timer = null;
-    $("rb-run").disabled = false; $("rb-run").textContent = T("app.run");
+    runBtn.disabled = false; caret.disabled = false; runBtn.textContent = T("app.run");
   }
   function poll() {
     fetch("/api/status").then(function (r) { return r.json(); }).then(function (s) {
@@ -56,12 +81,12 @@
       e.className = "err"; e.textContent = s.error; log.appendChild(e);
     });
   }
-  $("rb-run").onclick = function () {
-    $("rb-run").disabled = true; $("rb-run").textContent = T("app.running");
+  function start(dry) {
+    menuOpen(false);
+    runBtn.disabled = true; caret.disabled = true; runBtn.textContent = T("app.running");
     fetch("/api/run", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profile: $("rb-profile").value, focus: $("rb-focus").value || null,
-                             dry_run: $("rb-dry").checked })
+      body: JSON.stringify({ profile: prof ? prof.value : "", dry_run: !!dry })
     }).then(function (r) { return r.json().then(function (d) { return [r.ok, d]; }); })
       .then(function (res) {
         if (!res[0]) {
@@ -70,9 +95,20 @@
         }
         timer = setInterval(poll, 1000); poll();
       });
-  };
+  }
+  runBtn.onclick = function () { start(false); };
+  caret.onclick = function (e) { e.stopPropagation(); menuOpen(menu.hidden); };
+  Array.prototype.forEach.call(menu.querySelectorAll("button"), function (b) {
+    b.onclick = function () { start(b.dataset.dry === "1"); };
+  });
+  document.addEventListener("click", function (e) {
+    if (!menu.hidden && !menu.contains(e.target) && e.target !== caret) menuOpen(false);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !menu.hidden) { menuOpen(false); caret.focus(); }
+  });
   document.addEventListener("skoll:lang", function () {
-    if (!$("rb-run").disabled) $("rb-run").textContent = T("app.run");
+    if (!runBtn.disabled) runBtn.textContent = T("app.run");
   });
 })();
 </script>

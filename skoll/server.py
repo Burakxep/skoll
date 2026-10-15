@@ -14,13 +14,23 @@ import threading
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlparse
 
 from .config import ConfigError, get_profile, list_profiles, load_config
 from .pipeline import run_profile
 from . import report as report_mod
 
 RUNBAR_MARK = "<!--SKOLL_RUNBAR-->"
+
+# A served report embeds the i18n dictionary it was built with, which may predate
+# the web-app-only keys below. This tops the dictionary up (without overwriting)
+# before i18n.js runs on DOMContentLoaded, so the injected labels still localise.
+I18N_PATCH = (
+    "<script>(function(){var D=window.SKOLL_I18N;if(!D)return;"
+    "function a(l,k,v){D[l]=D[l]||{};if(D[l][k]==null)D[l][k]=v;}"
+    "a('en','app.weekly','Weekly');a('tr','app.weekly','Haftal\\u0131k');"
+    "a('en','app.dashboard','\\u2190 Dashboard');a('tr','app.dashboard','\\u2190 Panel');"
+    "})();</script>")
 
 
 class _Log:
@@ -114,13 +124,82 @@ def render_page(job: Job, config_path: str | None, profile: str | None) -> str:
         page = path.read_text(encoding="utf-8")
     else:
         page = report_mod.build_html([], profile, report_mod._today())
-    tags = focus_tags(cfg["profiles"][profile]) if profile else []
     opt = lambda v, label, sel=False: (  # noqa: E731
         f'<option value="{html.escape(v)}"{" selected" if sel else ""}>{html.escape(label)}</option>')
+    # Only offer the profile dropdown when there's a real choice. With one
+    # profile it's just noise, so carry the value in a hidden input instead.
+    if len(names) > 1:
+        profile_control = ('<select id="rb-profile" aria-label="Profile" '
+                           'data-i18n-aria="app.profile">'
+                           + "".join(opt(n, n, n == profile) for n in names)
+                           + '</select>')
+    else:
+        profile_control = (f'<input type="hidden" id="rb-profile" '
+                           f'value="{html.escape(profile, quote=True)}">')
     bar = (report_mod.TEMPLATES / "runbar.html").read_text(encoding="utf-8")
-    bar = bar.replace("__PROFILES__", "".join(opt(n, n, n == profile) for n in names))
-    bar = bar.replace("__FOCUS__", "".join(opt(t, t) for t in tags))
-    return page.replace(RUNBAR_MARK, bar, 1)
+    bar = bar.replace("__PROFILE_CONTROL__", profile_control)
+    href = "/weekly?profile=" + quote(profile, safe="") if profile else "/weekly"
+    bar = bar.replace("__WEEKLY_HREF__", html.escape(href, quote=True))
+    return page.replace(RUNBAR_MARK, I18N_PATCH + bar, 1)
+
+
+def latest_weekly_report(profile: str) -> Path | None:
+    """Newest weekly dashboard on disk for a profile (by ISO-week folder name)."""
+    base = report_mod.REPORTS / profile / "weekly"
+    weeks = sorted(base.glob("*/report.html"), key=lambda p: p.parent.name)
+    return weeks[-1] if weeks else None
+
+
+# A back-link to the daily dashboard, injected into the weekly page's header so
+# the two pages navigate to each other in the web app (static files don't have it).
+def _weekly_backlink(profile: str) -> str:
+    # I18N_PATCH tops up the embedded dictionary, so data-i18n localises even on a
+    # weekly report built before this key existed. Styled like a control button so
+    # it sits cleanly next to the TR|EN / theme controls.
+    href = "/?profile=" + quote(profile, safe="") if profile else "/"
+    return (I18N_PATCH + f'<a class="weekly-back" href="{html.escape(href, quote=True)}" '
+            f'data-i18n="app.dashboard" style="height:44px;display:inline-flex;'
+            f'align-items:center;text-decoration:none;border:1px solid var(--border);'
+            f'border-radius:12px;padding:0 16px;font-weight:600;white-space:nowrap">'
+            f'← Dashboard</a>')
+
+
+def render_weekly(config_path: str | None, profile: str | None) -> tuple[str, int]:
+    """The newest weekly report for `profile` with a back-link to the dashboard,
+    or a small placeholder when none has been generated yet."""
+    cfg = load_config(config_path)
+    names = list_profiles(cfg)
+    profile = profile if profile in names else (names[0] if names else "")
+    path = latest_weekly_report(profile) if profile else None
+    back = _weekly_backlink(profile)
+    if path:
+        page = path.read_text(encoding="utf-8")
+        # Put the back-link in the header's control group (TR|EN / theme), so it
+        # lines up on the right instead of wrapping under the logo. Fall back to
+        # the end of the header if that group isn't found.
+        if 'class="weekly-back"' not in page:
+            if '<div class="controls">' in page:
+                page = page.replace('<div class="controls">',
+                                    '<div class="controls">' + back, 1)
+            else:
+                page = page.replace("</header>", back + "</header>", 1)
+        return page, 200
+    hint = ("No weekly report yet for "
+            f"<b>{html.escape(profile or '-')}</b>. Generate it with "
+            "<code>python -m skoll weekly --profile "
+            f"{html.escape(profile or '&lt;profile&gt;')}</code>.")
+    body = (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
+            f'<meta name="viewport" content="width=device-width, initial-scale=1">'
+            f'<title>Sköll weekly · {html.escape(profile or "")}</title>'
+            f'<style>body{{margin:0;background:#0b0d12;color:#e6e9ef;'
+            f'font:16px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;'
+            f'display:flex;min-height:100vh;align-items:center;justify-content:center}}'
+            f'.box{{max-width:560px;padding:0 24px;text-align:center}}'
+            f'a{{color:#f5a524}}code{{background:#1a202b;border-radius:6px;padding:2px 8px}}'
+            f'</style></head><body><div class="box"><h1>🐺 Sköll weekly</h1>'
+            f'<p>{hint}</p><p><a href="{html.escape(("/?profile=" + quote(profile, safe="")) if profile else "/")}">← Back to the dashboard</a></p>'
+            f'</div></body></html>')
+    return body, 200
 
 
 def focus_tags(profile: dict) -> list[str]:
@@ -162,6 +241,14 @@ def make_handler(job: Job, config_path: str | None, port: int):
                 try:
                     q = parse_qs(urlparse(self.path).query).get("profile", [None])[0]
                     return self._send(200, render_page(job, config_path, q).encode("utf-8"),
+                                      "text/html; charset=utf-8")
+                except ConfigError as e:
+                    return self._json({"error": str(e)}, 500)
+            if path == "/weekly":
+                try:
+                    q = parse_qs(urlparse(self.path).query).get("profile", [None])[0]
+                    body, code = render_weekly(config_path, q)
+                    return self._send(code, body.encode("utf-8"),
                                       "text/html; charset=utf-8")
                 except ConfigError as e:
                     return self._json({"error": str(e)}, 500)

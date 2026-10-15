@@ -144,13 +144,26 @@ def head_js() -> str:
 
 
 CONTROLS = """<div class="controls">
-      <div class="lang" role="group" aria-label="Language" data-i18n-aria="lang.aria">
-        <button class="lang-btn" type="button" data-lang="tr" aria-pressed="false">TR</button>
-        <button class="lang-btn" type="button" data-lang="en" aria-pressed="true">EN</button>
+      <div class="settings">
+        <button class="theme-btn" id="settings-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings" data-i18n-aria="settings.aria">
+          <span aria-hidden="true">⚙</span><span class="label" data-i18n="settings.label">Settings</span>
+        </button>
+        <div class="settings-pop" id="settings-pop" role="menu" hidden>
+          <div class="set-row">
+            <span class="set-lbl" data-i18n="settings.lang">Language</span>
+            <div class="lang" role="group" aria-label="Language" data-i18n-aria="lang.aria">
+              <button class="lang-btn" type="button" data-lang="tr" aria-pressed="false">TR</button>
+              <button class="lang-btn" type="button" data-lang="en" aria-pressed="true">EN</button>
+            </div>
+          </div>
+          <div class="set-row">
+            <span class="set-lbl" data-i18n="settings.theme">Theme</span>
+            <button class="theme-btn" id="theme" type="button" aria-label="Toggle light/dark mode" data-i18n-aria="theme.aria">
+              <span id="theme-icon">◐</span><span class="label" id="theme-label">Theme</span>
+            </button>
+          </div>
+        </div>
       </div>
-      <button class="theme-btn" id="theme" type="button" aria-label="Toggle light/dark mode" data-i18n-aria="theme.aria">
-        <span id="theme-icon">◐</span><span class="label" id="theme-label">Theme</span>
-      </button>
     </div>"""
 
 
@@ -191,10 +204,10 @@ def page_fills() -> dict[str, str]:
 
 
 ACTIONS = ('<button class="theme-btn act-btn" type="button" data-open-doc="prompt" '
-           'title="Analysis prompt" data-i18n-title="btn.prompt" '
-           'aria-label="Analysis prompt" data-i18n-aria="btn.prompt">'
+           'title="Create Prompt" data-i18n-title="btn.prompt" '
+           'aria-label="Create Prompt" data-i18n-aria="btn.prompt">'
            '<span aria-hidden="true">✨</span><span class="txt" data-i18n="btn.prompt">'
-           'Analysis prompt</span></button>')
+           'Create Prompt</span></button>')
 
 
 def build_html(items: list[Item], profile_name: str, date: str,

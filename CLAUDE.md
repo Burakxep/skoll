@@ -19,7 +19,9 @@ offensive-security tooling early.
 - `skoll/pipeline.py` — fetch → dedup → score → report (+ daily snapshots).
 - `skoll/server.py` — `python -m skoll serve`: stdlib localhost web app. Serves the
   dashboard with a Run bar (`templates/runbar.html`, injected at the
-  `<!--SKOLL_RUNBAR-->` marker) that runs `pipeline.run_profile` in a thread.
+  `<!--SKOLL_RUNBAR-->` marker) that runs `pipeline.run_profile` in a thread, plus
+  a Weekly link. `GET /weekly` serves the newest weekly report on disk (read-only;
+  it does not regenerate it) with a back-link to the dashboard.
   No relevance logic here; keep it a thin wrapper around the pipeline.
 - `skoll/weekly.py` / `weekly_report.py` — this week vs last week trends.
 - `skoll/banner.py` — the ASCII wolf+sun banner printed on run.

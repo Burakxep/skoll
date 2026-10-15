@@ -89,13 +89,24 @@ day's report = items reported by earlier runs today (from `observations`,
 `python -m skoll serve` starts a stdlib-only server on 127.0.0.1:8765. It serves
 the normal dashboard (same UI, theme and language as report.html) with a Run bar
 (`templates/runbar.html`) injected at the `<!--SKOLL_RUNBAR-->` marker in the
-header: profile / focus / dry-run + **Run**. Run POSTs `/api/run`, the page polls
-`/api/status` for the log, then reloads with the new report. One scan at a time;
-Host-header and JSON-content-type checks guard against DNS-rebinding/CSRF.
-Static report.html files (opened from disk) don't show the bar. The bar sits in
-the header row beside the TR|EN / theme controls, so the served page looks like
-report.html. Reports from older versions (no marker) are skipped; with none left
-the server shows an empty dashboard until the first Run.
+header: profile / dry-run + **Run** + a **Weekly** link. Run POSTs `/api/run`,
+the page polls `/api/status` for the log, then reloads with the new report. One
+scan at a time; Host-header and JSON-content-type checks guard against
+DNS-rebinding/CSRF. Static report.html files (opened from disk) don't show the
+bar. The bar sits in the header row beside the TR|EN / theme controls, so the
+served page looks like report.html. Reports from older versions (no marker) are
+skipped; with none left the server shows an empty dashboard until the first Run.
+There is no focus or category selector: filtering is done by clicking the tag
+chips on the cards.
+
+`GET /weekly[?profile=]` serves the newest weekly report on disk (the same
+`reports/<profile>/weekly/<week>/report.html` that `skoll weekly` writes) with a
+**← Dashboard** back-link added to its header, so the daily and weekly pages
+navigate to each other in the same tab. When no weekly report exists yet it
+serves a small placeholder pointing at `skoll weekly`. The server only reads
+these files; it does not (yet) regenerate the weekly report — that stays a job
+for the `weekly` command. The Weekly link and back-link use static labels (no
+`data-i18n`), because a served report may embed an older i18n dictionary.
 
 ## Weekly trends (`skoll/weekly.py`)
 - Every real daily run snapshots ALL relevant items (not only reported ones)

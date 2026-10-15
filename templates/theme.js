@@ -20,12 +20,33 @@
   });
   document.addEventListener("DOMContentLoaded", function () {
     var btn = document.getElementById("theme");
-    if (!btn) return;
-    btn.onclick = function () {
-      root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
-      try { localStorage.setItem("skoll.theme", root.dataset.theme); } catch (e) {}
+    if (btn) {
+      btn.onclick = function () {
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+        try { localStorage.setItem("skoll.theme", root.dataset.theme); } catch (e) {}
+        sync();
+      };
       sync();
-    };
-    sync();
+    }
+
+    // Settings popover: holds the language switch + theme toggle.
+    var sb = document.getElementById("settings-btn");
+    var pop = document.getElementById("settings-pop");
+    if (sb && pop) {
+      var setOpen = function (open) {
+        pop.hidden = !open;
+        sb.setAttribute("aria-expanded", open ? "true" : "false");
+      };
+      sb.onclick = function (e) {
+        e.stopPropagation();
+        setOpen(pop.hidden);
+      };
+      document.addEventListener("click", function (e) {
+        if (!pop.hidden && !pop.contains(e.target) && e.target !== sb) setOpen(false);
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && !pop.hidden) { setOpen(false); sb.focus(); }
+      });
+    }
   });
 })();

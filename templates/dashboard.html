@@ -98,7 +98,6 @@ __THEME_CSS__
     font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
   @media (max-width: 640px) {
-    .act-btn .txt { display: none; }
     .wrap { padding: 0 16px; }
     header { padding-top: 20px; }
     .logo { width: 48px; height: 48px; border-radius: 12px; }
@@ -153,9 +152,6 @@ __HEAD_JS__
       <nav class="tabs" id="tabs" role="tablist" aria-label="Source">__TABS__</nav>
       <div class="tools">
         <input class="search" id="q" type="search" placeholder="Search title, description, keywords…" data-i18n-ph="search.ph" aria-label="Search" data-i18n-aria="search.ph">
-        <select class="sort" id="cat" aria-label="Category" data-i18n-aria="cat.aria">
-          <option value="all" data-i18n="cat.all">All categories</option>
-        </select>
         <select class="sort" id="sort" aria-label="Sort" data-i18n-aria="sort.aria">
           <option value="score" data-i18n="sort.score">Sort: score</option>
           <option value="date" data-i18n="sort.date">Sort: newest</option>
@@ -182,27 +178,12 @@ __HEAD_JS__
   var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
   var q = document.getElementById("q");
   var sort = document.getElementById("sort");
-  var cat = document.getElementById("cat");
   var state = { src: "all", cat: "all", tier: "all", q: "", sort: "score" };
   var tierBtns = Array.prototype.slice.call(document.querySelectorAll(".tier-btn"));
 
-  // Category menu: every focus tag present in today's cards, most common first,
-  // "suspicious" last.
+  // Category filtering is driven entirely by the tag chips on the cards:
+  // clicking a chip sets state.cat, clicking it again clears it.
   function tagsOf(c) { return c.dataset.tags ? c.dataset.tags.split(" ") : []; }
-  var tagTotals = {};
-  cards.forEach(function (c) {
-    tagsOf(c).forEach(function (t) { tagTotals[t] = (tagTotals[t] || 0) + 1; });
-  });
-  Object.keys(tagTotals).sort(function (a, b) {
-    var rank = function (t) { return t === "breakout" ? -1 : t === "suspicious" ? 1 : 0; };
-    if (rank(a) !== rank(b)) return rank(a) - rank(b);
-    return tagTotals[b] - tagTotals[a] || a.localeCompare(b);
-  }).forEach(function (t) {
-    var o = document.createElement("option");
-    o.value = t; o.dataset.label = t;
-    cat.appendChild(o);
-  });
-  var catOptions = Array.prototype.slice.call(cat.options);
 
   function matchesQuery(c) {
     return !state.q || c.dataset.text.indexOf(state.q) !== -1;
@@ -216,7 +197,7 @@ __HEAD_JS__
     });
     // Each control's counts apply every OTHER active filter, so every number
     // reads "what you'd get if you click".
-    var shown = 0, counts = { all: 0 }, catCounts = { all: 0 }, tierCounts = {};
+    var shown = 0, counts = { all: 0 }, tierCounts = {};
     cards.forEach(function (c) {
       grid.appendChild(c);
       var okQ = matchesQuery(c);
@@ -228,10 +209,6 @@ __HEAD_JS__
         counts.all++;
         counts[c.dataset.source] = (counts[c.dataset.source] || 0) + 1;
       }
-      if (okQ && okSrc && okTier) {
-        catCounts.all++;
-        tags.forEach(function (t) { catCounts[t] = (catCounts[t] || 0) + 1; });
-      }
       if (okQ && okSrc && okCat) {
         tierCounts[c.dataset.tier] = (tierCounts[c.dataset.tier] || 0) + 1;
       }
@@ -242,16 +219,11 @@ __HEAD_JS__
         ch.classList.toggle("on", ch.dataset.tag === state.cat);
       });
     });
-    catOptions.forEach(function (o) {
-      if (o.value !== "all") o.textContent = o.dataset.label + " (" + (catCounts[o.value] || 0) + ")";
-    });
     tierBtns.forEach(function (b) {
       b.querySelector(".n").textContent = tierCounts[b.dataset.tier] || 0;
       b.setAttribute("aria-pressed", b.dataset.tier === state.tier ? "true" : "false");
     });
     document.querySelector(".tier-legend").classList.toggle("filtering", state.tier !== "all");
-    cat.value = state.cat;
-    cat.classList.toggle("active", state.cat !== "all");
     tabs.forEach(function (t) {
       var n = counts[t.dataset.src] || 0;
       t.querySelector(".n").textContent = n;
@@ -267,7 +239,6 @@ __HEAD_JS__
   });
   q.oninput = function () { state.q = q.value.trim().toLowerCase(); render(); };
   sort.onchange = function () { state.sort = sort.value; render(); };
-  cat.onchange = function () { state.cat = cat.value; render(); };
   // Score-colour legend doubles as a filter; clicking the active one clears it.
   tierBtns.forEach(function (b) {
     b.onclick = function () {

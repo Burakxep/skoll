@@ -86,7 +86,10 @@ class ServerTest(unittest.TestCase):
         code, body = self.call("/")
         self.assertEqual(code, 200)
         self.assertIn('id="rb-run"', body)
-        self.assertIn('<option value="recon">', body)
+        self.assertIn('id="rb-profile"', body)             # profile value carried
+        self.assertNotIn('<select id="rb-profile"', body)  # hidden for a single profile
+        self.assertNotIn('id="rb-focus"', body)            # focus selector removed
+        self.assertNotIn('id="cat"', body)                 # category menu removed
         self.assertIn('data-open-doc="prompt"', body)
 
     def test_old_design_report_is_skipped(self):
@@ -109,6 +112,42 @@ class ServerTest(unittest.TestCase):
         self.assertIn("2026-10-01", body)
         self.assertNotIn("stale", body)
         self.assertEqual(body.count('id="rb-run"'), 1)
+
+    def test_profile_dropdown_returns_with_multiple_profiles(self):
+        cfg = Path(self.tmp.name) / "multi.yaml"
+        cfg.write_text("profiles:\n  a:\n    sources: [rss]\n"
+                       "  b:\n    sources: [rss]\n", encoding="utf-8")
+        page = server.render_page(server.Job(str(cfg)), str(cfg), "a")
+        self.assertIn('<select id="rb-profile"', page)
+        self.assertIn('<option value="a"', page)
+        self.assertIn('<option value="b"', page)
+
+    def test_dashboard_links_to_weekly(self):
+        _, body = self.call("/")
+        self.assertIn('class="weekly"', body)
+        self.assertIn('href="/weekly?profile=demo"', body)
+        self.assertNotIn("__WEEKLY_HREF__", body)
+
+    def test_weekly_placeholder_when_none(self):
+        code, body = self.call("/weekly")
+        self.assertEqual(code, 200)
+        self.assertIn("No weekly report yet", body)
+        self.assertIn('href="/?profile=demo"', body)
+
+    def test_weekly_report_is_served_with_backlink(self):
+        d = server.report_mod.REPORTS / "demo" / "weekly" / "2026-W42"
+        d.mkdir(parents=True)
+        (d / "report.html").write_text(
+            "<html><header>weekly body</header></html>", encoding="utf-8")
+        code, body = self.call("/weekly?profile=demo")
+        self.assertEqual(code, 200)
+        self.assertIn("weekly body", body)
+        self.assertIn('class="weekly-back"', body)
+        self.assertIn('href="/?profile=demo"', body)
+
+    def test_weekly_refuses_foreign_host(self):
+        code, _ = self.call("/weekly", headers={"Host": "evil.example"})
+        self.assertEqual(code, 403)
 
     def test_status_idle(self):
         code, body = self.call("/api/status")

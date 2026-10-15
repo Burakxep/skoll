@@ -54,7 +54,8 @@ cp config.example.yaml config.yaml        # your personal copy (gitignored)
 python -m skoll serve                     # web app: opens http://127.0.0.1:8765
 ```
 
-In the web app press **Run** and the dashboard fills with the scan. Prefer the
+In the web app press **Run** and the dashboard fills with the scan; the
+**Weekly** link in the header opens this week vs last week. Prefer the
 terminal? `python -m skoll run --profile cybersec` does the same scan (about a
 minute) and writes `reports/cybersec/<date>/report.html`.
 
@@ -71,7 +72,7 @@ what is new since the previous days.
 
 | Command | What it does |
 |---|---|
-| `python -m skoll serve` | Local web app: dashboard with a **Run** button (`--port`, `--no-browser`) |
+| `python -m skoll serve` | Local web app: dashboard with a **Run** button and a **Weekly** link (`--port`, `--no-browser`) |
 | `python -m skoll run -p cybersec` | Scan all sources, write today's reports |
 | `python -m skoll run -p cybersec -f redteam` | Same, but only items tagged `redteam` |
 | `python -m skoll run -p cybersec --dry-run` | Preview: no dedup, no history, writes `*.dry-run.*` |
