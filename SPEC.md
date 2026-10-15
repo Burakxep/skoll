@@ -72,7 +72,7 @@ noise, and produces a dated report plus a ready-to-paste analysis prompt.
 ## Outputs (decided) — all dated, "scan for <date>, found these"
 One folder per day: `reports/<profile>/<date>/`
 1. `report.html` — visual dashboard (`templates/dashboard.html`; logo cropped from `skoll_logo.png` into `templates/logo-mark.png` + `favicon.png`, embedded as data URIs):
-   summary tiles + source mix bar, **Analysis prompt button** that opens prompt.md in a slide-over panel (copy + download),
+   **Analysis prompt button** in the header that opens prompt.md in a slide-over panel (copy + download),
    light/dark theme, source tabs with counts, category (focus tag) menu + clickable tag chips, search, sort by score/date/stars-per-day.
 2. `digest.md` — human digest (still written to disk; the dashboard's cards
    show the same items, so its panel only offers prompt.md).
@@ -92,7 +92,10 @@ the normal dashboard (same UI, theme and language as report.html) with a Run bar
 header: profile / focus / dry-run + **Run**. Run POSTs `/api/run`, the page polls
 `/api/status` for the log, then reloads with the new report. One scan at a time;
 Host-header and JSON-content-type checks guard against DNS-rebinding/CSRF.
-Static report.html files (opened from disk) don't show the bar.
+Static report.html files (opened from disk) don't show the bar. The bar sits in
+the header row beside the TR|EN / theme controls, so the served page looks like
+report.html. Reports from older versions (no marker) are skipped; with none left
+the server shows an empty dashboard until the first Run.
 
 ## Weekly trends (`skoll/weekly.py`)
 - Every real daily run snapshots ALL relevant items (not only reported ones)

@@ -10,7 +10,6 @@ from __future__ import annotations
 import contextlib
 import html
 import json
-import re
 import threading
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -93,10 +92,15 @@ class Job:
 
 
 def latest_report(profile: str) -> Path | None:
-    """Newest main (non-focus, non-dry) dashboard for a profile."""
+    """Newest main (non-focus, non-dry) dashboard for a profile. Reports from
+    older versions (no Run bar marker, older design) are skipped."""
     base = report_mod.REPORTS / profile
     days = sorted(base.glob("*/report.html"), key=lambda p: p.parent.name)
-    return days[-1] if days else None
+    for path in reversed(days):
+        with contextlib.suppress(OSError):
+            if RUNBAR_MARK in path.read_text(encoding="utf-8"):
+                return path
+    return None
 
 
 def render_page(job: Job, config_path: str | None, profile: str | None) -> str:
@@ -116,13 +120,7 @@ def render_page(job: Job, config_path: str | None, profile: str | None) -> str:
     bar = (report_mod.TEMPLATES / "runbar.html").read_text(encoding="utf-8")
     bar = bar.replace("__PROFILES__", "".join(opt(n, n, n == profile) for n in names))
     bar = bar.replace("__FOCUS__", "".join(opt(t, t) for t in tags))
-    if RUNBAR_MARK in page:
-        return page.replace(RUNBAR_MARK, bar, 1)
-    # Report written by an older version (buttons in the header, no marker):
-    # move them next to the Run bar so it matches the current layout.
-    page = re.sub(r'<button class="act-btn".*?</button>', "", page, flags=re.S)
-    row = f'<div class="actionbar">{bar}<span class="grow"></span>{report_mod.ACTIONS}</div>'
-    return page.replace("</header>", row + "</header>", 1)
+    return page.replace(RUNBAR_MARK, bar, 1)
 
 
 def focus_tags(profile: dict) -> list[str]:

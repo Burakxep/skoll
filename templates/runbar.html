@@ -1,22 +1,17 @@
 <style>
-  .actionbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px;
-    padding: 10px 12px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; }
-  .actionbar .grow { display: none; }
-  .act-btn { height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer;
-    border: 1px solid var(--border); background: var(--surface-2); font-weight: 600;
-    display: inline-flex; align-items: center; gap: 8px; }
-  .act-btn:hover { border-color: var(--sun); color: var(--sun); }
-  .runbar { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .runbar select { height: 44px; padding: 0 10px; border-radius: 12px; max-width: 150px;
-    border: 1px solid var(--border); background: var(--surface); }
-  .runbar .dry { display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
-    color: var(--muted); white-space: nowrap; }
+  .act-btn .txt { display: none; }  /* icon only next to the Run bar; label is the tooltip */
+  .runbar { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .runbar select { height: 44px; padding: 0 10px; border-radius: 12px; max-width: 140px;
+    border: 1px solid var(--border); background: var(--surface); font-size: 14px; cursor: pointer; }
+  .runbar select:hover { border-color: var(--sun); }
+  .runbar .dry { display: inline-flex; align-items: center; gap: 6px; font-size: 14px;
+    color: var(--muted); white-space: nowrap; cursor: pointer; }
   .runbar .run { height: 44px; padding: 0 18px; border-radius: 12px; cursor: pointer;
-    border: 0; background: var(--sun); color: var(--on-sun); font-weight: 700; }
+    border: 1px solid var(--sun); background: var(--sun); color: var(--on-sun);
+    font-size: 14px; font-weight: 600; }
   .runbar .run:disabled { opacity: .55; cursor: default; }
-  .runbar .run:focus-visible, .runbar select:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
-  @media (max-width: 700px) {
+  .runbar .run:focus-visible, .runbar select:focus-visible { outline: 2px solid var(--sun); outline-offset: 1px; }
+  @media (max-width: 640px) {
     .runbar { width: 100%; }
     .runbar select { flex: 1 1 120px; max-width: none; }
     .runbar .run { flex: 1 1 100%; }
@@ -32,7 +27,7 @@
   <select id="rb-focus" aria-label="Focus" data-i18n-aria="app.focus">
     <option value="" data-i18n="app.focus.any">Any</option>__FOCUS__
   </select>
-  <label class="dry"><input type="checkbox" id="rb-dry"><span data-i18n="app.dry">Dry run (don't write history)</span></label>
+  <label class="dry" title="Scan without writing history" data-i18n-title="app.dry.title"><input type="checkbox" id="rb-dry"><span data-i18n="app.dry">Dry run</span></label>
   <button class="run" id="rb-run" type="button" data-i18n="app.run">▶ Run</button>
 </div>
 <pre class="runlog" id="rb-log" hidden></pre>

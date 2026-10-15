@@ -31,13 +31,14 @@ def item(source, tier, tags=()):
 
 
 class SummaryTest(unittest.TestCase):
-    def test_kpis_and_prompt_button(self):
+    def test_header_has_run_marker_and_prompt_button(self):
         items = [item("github", "top", ["breakout"]), item("rss", "high"),
                  item("reddit", "mid", ["suspicious"])]
         page = report.build_html(items, "demo", "2026-10-14")
-        self.assertIn('class="kpis"', page)
-        self.assertIn('class="mix-bar"', page)
-        self.assertIn("<!--SKOLL_RUNBAR-->", page)
+        header = page[page.index("<header"):page.index("</header>")]
+        self.assertIn("<!--SKOLL_RUNBAR-->", header)
+        self.assertIn('class="controls"', header)
+        self.assertNotIn('class="kpis"', page)
         self.assertIn('data-open-doc="prompt"', page)
         self.assertNotIn('data-open-doc="digest"', page)
 
@@ -88,15 +89,26 @@ class ServerTest(unittest.TestCase):
         self.assertIn('<option value="recon">', body)
         self.assertIn('data-open-doc="prompt"', body)
 
-    def test_old_report_gets_run_bar_and_buttons_moved(self):
+    def test_old_design_report_is_skipped(self):
         d = server.report_mod.REPORTS / "demo" / "2026-10-01"
         d.mkdir(parents=True)
-        old = ('<html><header><div class="head-r"><button class="act-btn" '
-               'type="button">Digest</button></div></header></html>')
+        old = '<html><header><h1>old design</h1></header></html>'
         (d / "report.html").write_text(old, encoding="utf-8")
         _, body = self.call("/")
+        self.assertNotIn("old design", body)
         self.assertIn('id="rb-run"', body)
-        self.assertNotIn(">Digest<", body)
+
+    def test_newest_current_report_is_served(self):
+        base = server.report_mod.REPORTS / "demo"
+        for day in ("2026-10-01", "2026-10-02"):
+            (base / day).mkdir(parents=True)
+        cur = report.build_html([item("rss", "high")], "demo", "2026-10-01")
+        (base / "2026-10-01" / "report.html").write_text(cur, encoding="utf-8")
+        (base / "2026-10-02" / "report.html").write_text("<html>stale</html>", encoding="utf-8")
+        _, body = self.call("/")
+        self.assertIn("2026-10-01", body)
+        self.assertNotIn("stale", body)
+        self.assertEqual(body.count('id="rb-run"'), 1)
 
     def test_status_idle(self):
         code, body = self.call("/api/status")

@@ -190,36 +190,9 @@ def page_fills() -> dict[str, str]:
     }
 
 
-def _kpis(items: list[Item]) -> str:
-    """Summary tiles + per-source mix bar shown above the cards."""
-    def tile(key: str, n: int, cls: str = "") -> str:
-        return f'<div class="kpi {cls}"><b>{n}</b>{i18n(key)}</div>'
-
-    tiles = [
-        tile("kpi.items", len(items)),
-        tile("kpi.top", sum(1 for it in items if it.tier == "top"), "hot"),
-        tile("kpi.strong", sum(1 for it in items if it.tier == "high")),
-        tile("kpi.breakout", sum(1 for it in items if "breakout" in it.tags), "hot"),
-        tile("kpi.suspicious", sum(1 for it in items if "suspicious" in it.tags), "alert"),
-    ]
-    out = f'<section class="kpis" aria-label="Summary">{"".join(tiles)}</section>'
-    if items:
-        segs, legend = [], []
-        for key, label in _SOURCES:
-            n = sum(1 for it in items if it.source == key)
-            if not n:
-                continue
-            pct = n / len(items) * 100
-            segs.append(f'<i style="width:{pct:.1f}%;background:var(--{key})"></i>')
-            name = i18n("src.rss") if key == "rss" else label
-            legend.append(f'<span><span class="dot" style="background:var(--{key})"></span>'
-                          f'{name} {n}</span>')
-        out += (f'<div class="mix"><div class="mix-bar">{"".join(segs)}</div>'
-                f'<div class="mix-legend">{"".join(legend)}</div></div>')
-    return out
-
-
-ACTIONS = ('<button class="act-btn" type="button" data-open-doc="prompt">'
+ACTIONS = ('<button class="theme-btn act-btn" type="button" data-open-doc="prompt" '
+           'title="Analysis prompt" data-i18n-title="btn.prompt" '
+           'aria-label="Analysis prompt" data-i18n-aria="btn.prompt">'
            '<span aria-hidden="true">✨</span><span class="txt" data-i18n="btn.prompt">'
            'Analysis prompt</span></button>')
 
@@ -253,7 +226,6 @@ def build_html(items: list[Item], profile_name: str, date: str,
         "__TABS__": "".join(tabs),
         "__CARDS__": cards,
         "__ACTIONS__": ACTIONS,
-        "__KPIS__": _kpis(items),
         "__DOCS__": docs,
     }
     for k, v in fills.items():

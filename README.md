@@ -115,7 +115,6 @@ reports/cybersec/
 The **dashboard** is a single self-contained HTML file. It has:
 - source tabs, a category menu, search, and sorting by score, date or stars/day;
 - score colours you can click to filter;
-- summary tiles (items, top, strong, breakouts, suspicious) and a source mix bar;
 - an **Analysis prompt** button that opens the day's `prompt.md` (copy / download);
 - light/dark themes and an **EN | TR** language switch.
 
