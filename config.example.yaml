@@ -54,6 +54,17 @@ global_exclude:
   - interview
   - certification-guide
 
+# Outbound notifications. Bot tokens stay in config.yaml (gitignored) or in
+# TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID. The web app's Integrations menu writes
+# this block; a failing integration never crashes a scan.
+integrations:
+  telegram:
+    enabled: false
+    bot_token: ""           # from @BotFather (/newbot)
+    chat_id: ""             # user, group or channel id (Integrations → Find chats)
+    send_on_run: true       # push the digest after each real (non-dry) scan
+    max_items: 20           # Telegram messages cap at 4096 chars
+
 profiles:
 
   cybersec:

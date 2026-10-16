@@ -92,12 +92,14 @@ what is new since the previous days.
 python -m skoll serve            # http://127.0.0.1:8765
 ```
 
-It serves the normal dashboard with one extra row: **profile, focus, dry run,
-▶ Run** and **✨ Analysis prompt**. Run starts the same scan as `skoll run`,
-shows its log, and reloads the page with the new report. The prompt button opens
-`prompt.md` in a panel with copy and download. One scan at a time; the server
-only listens on `127.0.0.1`. Reports opened straight from disk don't show the
-Run row, since they have no server behind them.
+It serves the normal dashboard with a header **Run** control, a **Weekly**
+link, **Integrations** (Telegram bot: token, chat, send-after-scan) and
+**✨ Create Prompt**. Run starts the same scan as `skoll run`, shows its log,
+and reloads the page with the new report. If Telegram is enabled, that scan's
+new items are posted to the chat. One scan at a time; the server only listens
+on `127.0.0.1`. Reports opened straight from disk don't show the Run row, since
+they have no server behind them. Telegram tokens stay in `config.yaml`
+(gitignored) or `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`.
 
 ### Daily reports
 
