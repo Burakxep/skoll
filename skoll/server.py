@@ -16,21 +16,26 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
 
-from .config import ConfigError, get_profile, list_profiles, load_config
+from .config import (ConfigError, get_profile, list_profiles, load_config,
+                     save_integrations, writable_path)
 from .pipeline import run_profile
 from . import report as report_mod
+from . import integrations as integ
 
 RUNBAR_MARK = "<!--SKOLL_RUNBAR-->"
 
-# A served report embeds the i18n dictionary it was built with, which may predate
-# the web-app-only keys below. This tops the dictionary up (without overwriting)
-# before i18n.js runs on DOMContentLoaded, so the injected labels still localise.
-I18N_PATCH = (
-    "<script>(function(){var D=window.SKOLL_I18N;if(!D)return;"
-    "function a(l,k,v){D[l]=D[l]||{};if(D[l][k]==null)D[l][k]=v;}"
-    "a('en','app.weekly','Weekly');a('tr','app.weekly','Haftal\\u0131k');"
-    "a('en','app.dashboard','\\u2190 Dashboard');a('tr','app.dashboard','\\u2190 Panel');"
-    "})();</script>")
+
+def i18n_patch() -> str:
+    """A served report embeds the i18n dictionary it was built with, which may
+    predate web-app-only keys. Top the dictionary up (without overwriting)
+    before i18n.js runs on DOMContentLoaded."""
+    data = json.dumps(report_mod.I18N, ensure_ascii=False).replace("</", "<\\/")
+    return (
+        "<script>(function(){var D=window.SKOLL_I18N;if(!D)return;"
+        f"var P={data};"
+        "for(var l in P){D[l]=D[l]||{};for(var k in P[l])"
+        "if(D[l][k]==null)D[l][k]=P[l][k];}"
+        "})();</script>")
 
 
 class _Log:
@@ -140,7 +145,7 @@ def render_page(job: Job, config_path: str | None, profile: str | None) -> str:
     bar = bar.replace("__PROFILE_CONTROL__", profile_control)
     href = "/weekly?profile=" + quote(profile, safe="") if profile else "/weekly"
     bar = bar.replace("__WEEKLY_HREF__", html.escape(href, quote=True))
-    return page.replace(RUNBAR_MARK, I18N_PATCH + bar, 1)
+    return page.replace(RUNBAR_MARK, i18n_patch() + bar, 1)
 
 
 def latest_weekly_report(profile: str) -> Path | None:
@@ -153,11 +158,11 @@ def latest_weekly_report(profile: str) -> Path | None:
 # A back-link to the daily dashboard, injected into the weekly page's header so
 # the two pages navigate to each other in the web app (static files don't have it).
 def _weekly_backlink(profile: str) -> str:
-    # I18N_PATCH tops up the embedded dictionary, so data-i18n localises even on a
+    # i18n_patch tops up the embedded dictionary, so data-i18n localises even on a
     # weekly report built before this key existed. Styled like a control button so
     # it sits cleanly next to the TR|EN / theme controls.
     href = "/?profile=" + quote(profile, safe="") if profile else "/"
-    return (I18N_PATCH + f'<a class="weekly-back" href="{html.escape(href, quote=True)}" '
+    return (i18n_patch() + f'<a class="weekly-back" href="{html.escape(href, quote=True)}" '
             f'data-i18n="app.dashboard" style="height:44px;display:inline-flex;'
             f'align-items:center;text-decoration:none;border:1px solid var(--border);'
             f'border-radius:12px;padding:0 16px;font-weight:600;white-space:nowrap">'
@@ -232,6 +237,18 @@ def make_handler(job: Job, config_path: str | None, port: int):
         def _host_ok(self) -> bool:  # blocks DNS-rebinding style access
             return self.headers.get("Host", "") in allowed_hosts
 
+        def _read_json(self) -> dict:
+            n = int(self.headers.get("Content-Length", "0"))
+            return json.loads(self.rfile.read(n) or b"{}")
+
+        def _telegram_from_body(self, data: dict) -> tuple[str, str]:
+            """Token/chat from the form (unsaved) with a fall-back to config/env."""
+            cfg = load_config(config_path)
+            saved = integ.telegram_settings(cfg.get("integrations"))
+            token = str(data.get("bot_token") or "").strip() or saved["bot_token"]
+            chat = str(data.get("chat_id") or "").strip() or saved["chat_id"]
+            return token, chat
+
         # -- routes
         def do_GET(self) -> None:  # noqa: N802
             if not self._host_ok():
@@ -254,17 +271,38 @@ def make_handler(job: Job, config_path: str | None, port: int):
                     return self._json({"error": str(e)}, 500)
             if path == "/api/status":
                 return self._json(job.status())
+            if path == "/api/integrations":
+                try:
+                    cfg = load_config(config_path)
+                except ConfigError as e:
+                    return self._json({"error": str(e)}, 500)
+                return self._json({"telegram": integ.public_telegram(
+                    cfg.get("integrations"))})
             self._json({"error": "not found"}, 404)
 
         def do_POST(self) -> None:  # noqa: N802
             if not self._host_ok() or self.headers.get("Content-Type", "") \
                     .split(";")[0] != "application/json":
                 return self._json({"error": "forbidden"}, 403)
-            if urlparse(self.path).path != "/api/run":
-                return self._json({"error": "not found"}, 404)
+            path = urlparse(self.path).path
             try:
-                n = int(self.headers.get("Content-Length", "0"))
-                data = json.loads(self.rfile.read(n) or b"{}")
+                data = self._read_json()
+            except (ValueError, json.JSONDecodeError) as e:
+                return self._json({"error": str(e)}, 400)
+            if path == "/api/run":
+                return self._post_run(data)
+            if path == "/api/integrations":
+                return self._post_integrations(data)
+            if path == "/api/integrations/telegram/test":
+                return self._post_telegram_test(data)
+            if path == "/api/integrations/telegram/chats":
+                return self._post_telegram_chats(data)
+            if path == "/api/integrations/telegram/send":
+                return self._post_telegram_send(data)
+            self._json({"error": "not found"}, 404)
+
+        def _post_run(self, data: dict) -> None:
+            try:
                 cfg = load_config(config_path)
                 profile = str(data.get("profile", ""))
                 get_profile(cfg, profile)
@@ -276,6 +314,67 @@ def make_handler(job: Job, config_path: str | None, port: int):
             if not job.start(profile, focus, bool(data.get("dry_run"))):
                 return self._json({"error": "a scan is already running"}, 409)
             self._json({"ok": True})
+
+        def _post_integrations(self, data: dict) -> None:
+            try:
+                dest = writable_path(config_path)
+                cfg = load_config(dest)
+                saved = integ.telegram_settings(cfg.get("integrations"), env=False)
+                token = str(data.get("bot_token") or "").strip() or saved["bot_token"]
+                chat = str(data.get("chat_id", saved["chat_id"]) or "").strip()
+                try:
+                    max_items = int(data.get("max_items", saved["max_items"]))
+                except (TypeError, ValueError):
+                    max_items = saved["max_items"]
+                block = cfg.get("integrations") if isinstance(
+                    cfg.get("integrations"), dict) else {}
+                block = dict(block)
+                block["telegram"] = {
+                    "enabled": integ._as_bool(data.get("enabled"), saved["enabled"]),
+                    "bot_token": token,
+                    "chat_id": chat,
+                    "send_on_run": integ._as_bool(
+                        data.get("send_on_run"), saved["send_on_run"]),
+                    "max_items": max(1, min(max_items, 50)),
+                }
+                save_integrations(dest, block)
+            except (ConfigError, OSError, ValueError) as e:
+                return self._json({"error": str(e)}, 400)
+            self._json({"ok": True, "telegram": integ.public_telegram(block)})
+
+        def _post_telegram_test(self, data: dict) -> None:
+            token, chat = self._telegram_from_body(data)
+            try:
+                integ.send_test(token, chat)
+            except integ.TelegramError as e:
+                return self._json({"error": str(e)}, 400)
+            self._json({"ok": True})
+
+        def _post_telegram_chats(self, data: dict) -> None:
+            token, _ = self._telegram_from_body(data)
+            try:
+                chats = integ.list_telegram_chats(token)
+            except integ.TelegramError as e:
+                return self._json({"error": str(e)}, 400)
+            self._json({"ok": True, "chats": chats})
+
+        def _post_telegram_send(self, data: dict) -> None:
+            try:
+                cfg = load_config(config_path)
+                profile = str(data.get("profile") or "")
+                if profile:
+                    get_profile(cfg, profile)
+                else:
+                    names = list_profiles(cfg)
+                    profile = names[0] if names else ""
+                if not profile:
+                    return self._json({"error": "no profile"}, 400)
+                token, chat = self._telegram_from_body(data)
+                n = integ.send_latest_digest(
+                    cfg.get("integrations"), profile, token=token, chat_id=chat)
+            except (ConfigError, integ.TelegramError) as e:
+                return self._json({"error": str(e)}, 400)
+            self._json({"ok": True, "sent": n})
 
     return Handler
 
