@@ -91,6 +91,9 @@ class ServerTest(unittest.TestCase):
         self.assertNotIn('id="rb-focus"', body)            # focus selector removed
         self.assertNotIn('id="cat"', body)                 # category menu removed
         self.assertIn('data-open-doc="prompt"', body)
+        self.assertIn('id="rb-integ"', body)
+        self.assertIn('id="integ-panel"', body)
+        self.assertIn('data-i18n="app.integrations"', body)
 
     def test_old_design_report_is_skipped(self):
         d = server.report_mod.REPORTS / "demo" / "2026-10-01"
@@ -172,6 +175,40 @@ class ServerTest(unittest.TestCase):
     def test_foreign_host_header_is_refused(self):
         code, _ = self.call("/", headers={"Host": "evil.example"})
         self.assertEqual(code, 403)
+
+    def test_integrations_get_hides_token(self):
+        cfg = Path(self.tmp.name) / "config.yaml"
+        cfg.write_text(cfg.read_text(encoding="utf-8") + (
+            "\nintegrations:\n  telegram:\n    enabled: true\n"
+            "    bot_token: SECRET\n    chat_id: '42'\n"), encoding="utf-8")
+        code, body = self.call("/api/integrations")
+        self.assertEqual(code, 200)
+        data = json.loads(body)["telegram"]
+        self.assertTrue(data["configured"])
+        self.assertTrue(data["enabled"])
+        self.assertEqual(data["chat_id"], "42")
+        self.assertNotIn("SECRET", body)
+        self.assertNotIn("bot_token", data)
+
+    def test_integrations_save_keeps_existing_token(self):
+        cfg = Path(self.tmp.name) / "config.yaml"
+        self.call("/api/integrations", {
+            "enabled": True, "bot_token": "tok1", "chat_id": "7",
+            "send_on_run": True, "max_items": 8,
+        }, {"Content-Type": "application/json"})
+        code, body = self.call("/api/integrations", {
+            "enabled": True, "chat_id": "8", "send_on_run": False, "max_items": 3,
+        }, {"Content-Type": "application/json"})
+        self.assertEqual(code, 200)
+        self.assertIn("tok1", cfg.read_text(encoding="utf-8"))
+        self.assertEqual(json.loads(body)["telegram"]["chat_id"], "8")
+        self.assertFalse(json.loads(body)["telegram"]["send_on_run"])
+
+    def test_telegram_test_requires_token(self):
+        code, body = self.call("/api/integrations/telegram/test", {},
+                               {"Content-Type": "application/json"})
+        self.assertEqual(code, 400)
+        self.assertIn("token", json.loads(body)["error"].lower())
 
 
 if __name__ == "__main__":

@@ -92,7 +92,11 @@ the normal dashboard (same UI, theme and language as report.html) with a Run bar
 header: profile / dry-run + **Run** + a **Weekly** link. Run POSTs `/api/run`,
 the page polls `/api/status` for the log, then reloads with the new report. One
 scan at a time; Host-header and JSON-content-type checks guard against
-DNS-rebinding/CSRF. Static report.html files (opened from disk) don't show the
+DNS-rebinding/CSRF. An **Integrations** menu in the same bar opens a slide-over
+to configure Telegram (`integrations.telegram` in `config.yaml`: bot token,
+chat id, send-on-run). Tokens never go back to the page; empty token on save
+keeps the stored one. `POST /api/integrations/telegram/{test,chats,send}` talk
+to Bot API. Static report.html files (opened from disk) don't show the
 bar. The bar sits in the header row beside the TR|EN / theme controls, so the
 served page looks like report.html. Reports from older versions (no marker) are
 skipped; with none left the server shows an empty dashboard until the first Run.
@@ -142,7 +146,7 @@ No copy-paste, no API key: Claude Code itself is the LLM layer.
 ## Deliberately deferred (future phases)
 - LLM provider abstraction (Together/OpenAI/Ollama) for fully-automated semantic
   pass, if the paste/`/skoll` flow ever feels slow.
-- Notification driver abstraction (Slack/Discord/Telegram), à la trendFinder.
+- More notification drivers (Slack/Discord) next to Telegram.
 - Keyword → source discovery ("give me the best subreddits for X").
 - Reddit OAuth, scheduled automation (cron/launchd).
 

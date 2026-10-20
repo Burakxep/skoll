@@ -13,6 +13,7 @@ from .scoring import (detect_breakouts, is_relevant, rank_and_filter, score_item
                       score_tier)
 from .store import Store
 from . import report as report_mod
+from .integrations import notify_run
 
 CONNECTORS = {
     "github": GitHubConnector,
@@ -141,6 +142,9 @@ def run_profile(profile_name: str, profile: dict[str, Any], *,
     readme_top = profile.get("github", {}).get("fetch_readme_top", 5)
     paths = report_mod.write_reports(report_items, profile_name, readme_top=readme_top,
                                      focus=focus, dry_run=dry_run)
+    if not dry_run:
+        day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        notify_run(profile.get("_integrations") or {}, ranked, profile_name, day)
     return {"ranked": ranked, "paths": paths, "counts": {
         "raw": len(raw), "fresh": len(fresh), "kept": len(ranked),
         "report": len(report_items)}}

@@ -21,16 +21,41 @@
   .run-menu button { text-align: left; height: 38px; padding: 0 12px; border: 0; border-radius: 8px;
     background: transparent; color: var(--fg); font-size: 14px; cursor: pointer; white-space: nowrap; }
   .run-menu button:hover { background: var(--surface-2); }
-  .runbar .weekly { height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer;
+  .runbar .weekly, .runbar .integ-btn { height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer;
     border: 1px solid var(--border); background: var(--surface); font-size: 14px;
     font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
-  .runbar .weekly:hover, .runbar .weekly:focus-visible { border-color: var(--sun); color: var(--sun); }
+  .runbar .weekly:hover, .runbar .weekly:focus-visible,
+  .runbar .integ-btn:hover, .runbar .integ-btn:focus-visible { border-color: var(--sun); color: var(--sun); }
+  .integ-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--muted); }
+  .integ-dot.on { background: #3ccfa4; }
+  .integ-dot.warn { background: var(--sun); }
+  .integ-form { display: flex; flex-direction: column; gap: 14px; max-width: 520px; }
+  .integ-row { display: flex; flex-direction: column; gap: 6px; }
+  .integ-row label { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .integ-row input[type="text"], .integ-row input[type="password"], .integ-row input[type="number"] {
+    height: 42px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); }
+  .integ-row input:focus { outline: 2px solid var(--sun); outline-offset: 1px; }
+  .integ-inline { display: flex; gap: 8px; }
+  .integ-inline input { flex: 1 1 auto; min-width: 0; }
+  .integ-check { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
+  .integ-check input { width: 16px; height: 16px; accent-color: var(--sun); }
+  .integ-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .integ-msg { min-height: 1.4em; font-size: 13px; color: var(--muted); }
+  .integ-msg.err { color: var(--warn); }
+  .integ-msg.ok { color: #3ccfa4; }
+  .integ-steps { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .integ-chats { display: flex; flex-direction: column; gap: 4px; }
+  .integ-chats button { text-align: left; height: auto; padding: 8px 12px; border: 1px solid var(--border);
+    border-radius: 10px; background: var(--surface); cursor: pointer; font-size: 13px; }
+  .integ-chats button:hover { border-color: var(--sun); }
+  .integ-hint { margin: 0; color: var(--muted); font-size: 13px; }
   @media (max-width: 640px) {
     .runbar { width: 100%; }
     .runbar select { flex: 1 1 120px; max-width: none; }
     .runsplit { flex: 1 1 100%; }
     .runsplit .run { flex: 1 1 auto; }
-    .runbar .weekly { flex: 1 1 100%; justify-content: center; }
+    .runbar .weekly, .runbar .integ-btn { flex: 1 1 100%; justify-content: center; }
   }
   .runlog { position: fixed; right: 16px; bottom: 16px; z-index: 30; width: min(560px, calc(100% - 32px));
     max-height: 40vh; overflow: auto; margin: 0; padding: 12px 14px; border-radius: 12px;
@@ -49,8 +74,68 @@
     </div>
   </div>
   <a class="weekly" href="__WEEKLY_HREF__"><span aria-hidden="true">📈</span><span data-i18n="app.weekly">Weekly</span></a>
+  <div class="runsplit">
+    <button class="integ-btn" id="rb-integ" type="button" aria-haspopup="true" aria-expanded="false"
+            aria-label="Integrations" data-i18n-aria="app.integrations">
+      <span class="integ-dot" id="rb-integ-dot" aria-hidden="true"></span>
+      <span data-i18n="app.integrations">Integrations</span>
+      <span aria-hidden="true">▾</span>
+    </button>
+    <div class="run-menu" id="rb-integ-menu" role="menu" hidden>
+      <button type="button" role="menuitem" id="rb-integ-tg" data-integ="telegram">
+        <span class="integ-dot" id="tg-dot" aria-hidden="true"></span>
+        <span data-i18n="integ.telegram">Telegram</span>
+      </button>
+    </div>
+  </div>
 </div>
 <pre class="runlog" id="rb-log" hidden></pre>
+<div class="scrim" id="integ-scrim" hidden></div>
+<aside class="panel" id="integ-panel" role="dialog" aria-modal="true" aria-labelledby="integ-title" hidden>
+  <div class="panel-head">
+    <strong id="integ-title" data-i18n="integ.title">Telegram</strong>
+    <div class="panel-tools">
+      <button class="pbtn" type="button" id="integ-close" aria-label="Close" data-i18n-aria="panel.close">✕</button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <p class="integ-hint" data-i18n="integ.help">Create a bot, then Sköll will push each scan's new items to that chat.</p>
+    <ol class="integ-steps">
+      <li data-i18n="integ.help.1">Open Telegram and start a chat with @BotFather.</li>
+      <li data-i18n="integ.help.2">Send /newbot, then paste the token below.</li>
+      <li data-i18n="integ.help.3">Open your new bot and send it /start (or add it to a group).</li>
+      <li data-i18n="integ.help.4">Click Find chats and pick the chat, or paste a chat id.</li>
+    </ol>
+    <form class="integ-form" id="integ-form" style="margin-top:18px">
+      <div class="integ-row">
+        <label for="tg-token" data-i18n="integ.token">Bot token</label>
+        <input id="tg-token" name="bot_token" type="password" autocomplete="off"
+               placeholder="123456:ABC…" data-i18n-ph="integ.token.ph">
+      </div>
+      <div class="integ-row">
+        <label for="tg-chat" data-i18n="integ.chat">Chat id</label>
+        <div class="integ-inline">
+          <input id="tg-chat" name="chat_id" type="text" autocomplete="off"
+                 placeholder="-100…" data-i18n-ph="integ.chat.ph">
+          <button class="pbtn" type="button" id="tg-find" data-i18n="integ.find">Find chats</button>
+        </div>
+        <div class="integ-chats" id="tg-chats" hidden></div>
+      </div>
+      <label class="integ-check"><input id="tg-on" type="checkbox"> <span data-i18n="integ.enabled">Enable Telegram</span></label>
+      <label class="integ-check"><input id="tg-run" type="checkbox" checked> <span data-i18n="integ.send_on_run">Send after each scan</span></label>
+      <div class="integ-row">
+        <label for="tg-max" data-i18n="integ.max_items">Max items per scan</label>
+        <input id="tg-max" type="number" min="1" max="50" value="20" style="max-width:120px">
+      </div>
+      <div class="integ-actions">
+        <button class="pbtn" type="submit" id="tg-save" data-i18n="integ.save">Save</button>
+        <button class="pbtn" type="button" id="tg-test" data-i18n="integ.test">Send test</button>
+        <button class="pbtn" type="button" id="tg-send" data-i18n="integ.send">Send latest report</button>
+      </div>
+      <p class="integ-msg" id="tg-msg" role="status"></p>
+    </form>
+  </div>
+</aside>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -101,14 +186,125 @@
   Array.prototype.forEach.call(menu.querySelectorAll("button"), function (b) {
     b.onclick = function () { start(b.dataset.dry === "1"); };
   });
+  var integBtn = $("rb-integ"), integMenu = $("rb-integ-menu");
+  var integPanel = $("integ-panel"), integScrim = $("integ-scrim");
+  var tgState = null;
+  function integMenuOpen(open) {
+    integMenu.hidden = !open;
+    integBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  function setDot(el, tg) {
+    el.classList.remove("on", "warn");
+    if (tg && tg.enabled && tg.configured) el.classList.add("on");
+    else if (tg && tg.configured) el.classList.add("warn");
+  }
+  function applyInteg(tg) {
+    if (!tg) return;
+    tgState = tg;
+    setDot($("rb-integ-dot"), tg);
+    setDot($("tg-dot"), tg);
+    if (tg.chat_id) $("tg-chat").value = tg.chat_id;
+    $("tg-on").checked = !!tg.enabled;
+    $("tg-run").checked = !!tg.send_on_run;
+    $("tg-max").value = tg.max_items || 20;
+    $("tg-token").placeholder = tg.bot_token_set
+      ? T("integ.token.kept") : T("integ.token.ph");
+  }
+  function msg(text, kind) {
+    var el = $("tg-msg");
+    el.textContent = text || "";
+    el.className = "integ-msg" + (kind ? " " + kind : "");
+  }
+  function post(url, body) {
+    return fetch(url, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body || {})
+    }).then(function (r) { return r.json().then(function (d) { return [r.ok, d]; }); });
+  }
+  function formPayload() {
+    var token = $("tg-token").value.trim();
+    var out = {
+      enabled: $("tg-on").checked,
+      chat_id: $("tg-chat").value.trim(),
+      send_on_run: $("tg-run").checked,
+      max_items: parseInt($("tg-max").value, 10) || 20
+    };
+    if (token) out.bot_token = token;
+    return out;
+  }
+  function openInteg() {
+    integMenuOpen(false);
+    integPanel.hidden = false; integScrim.hidden = false;
+    fetch("/api/integrations").then(function (r) { return r.json(); })
+      .then(function (d) { applyInteg(d.telegram); msg(""); });
+  }
+  function closeInteg() {
+    integPanel.hidden = true; integScrim.hidden = true;
+  }
+  fetch("/api/integrations").then(function (r) { return r.json(); })
+    .then(function (d) { applyInteg(d.telegram); }).catch(function () {});
+  integBtn.onclick = function (e) {
+    e.stopPropagation(); integMenuOpen(integMenu.hidden);
+  };
+  $("rb-integ-tg").onclick = function () { openInteg(); };
+  $("integ-close").onclick = closeInteg;
+  integScrim.onclick = closeInteg;
+  $("integ-form").onsubmit = function (e) {
+    e.preventDefault();
+    post("/api/integrations", formPayload()).then(function (res) {
+      if (!res[0]) { msg(res[1].error || T("integ.err"), "err"); return; }
+      applyInteg(res[1].telegram);
+      $("tg-token").value = "";
+      msg(T("integ.saved"), "ok");
+    });
+  };
+  $("tg-test").onclick = function () {
+    post("/api/integrations/telegram/test", formPayload()).then(function (res) {
+      msg(res[0] ? T("integ.test.ok") : (res[1].error || T("integ.err")),
+          res[0] ? "ok" : "err");
+    });
+  };
+  $("tg-send").onclick = function () {
+    var payload = formPayload();
+    payload.profile = prof ? prof.value : "";
+    post("/api/integrations/telegram/send", payload).then(function (res) {
+      msg(res[0] ? T("integ.send.ok") : (res[1].error || T("integ.err")),
+          res[0] ? "ok" : "err");
+    });
+  };
+  $("tg-find").onclick = function () {
+    post("/api/integrations/telegram/chats", formPayload()).then(function (res) {
+      var box = $("tg-chats");
+      box.innerHTML = "";
+      if (!res[0]) { box.hidden = true; msg(res[1].error || T("integ.err"), "err"); return; }
+      var chats = res[1].chats || [];
+      if (!chats.length) {
+        box.hidden = true; msg(T("integ.chats.empty"), "err"); return;
+      }
+      chats.forEach(function (c) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.textContent = (c.title || c.id) + " · " + c.id + (c.type ? " (" + c.type + ")" : "");
+        b.onclick = function () { $("tg-chat").value = c.id; msg(""); };
+        box.appendChild(b);
+      });
+      box.hidden = false; msg("");
+    });
+  };
   document.addEventListener("click", function (e) {
     if (!menu.hidden && !menu.contains(e.target) && e.target !== caret) menuOpen(false);
+    if (!integMenu.hidden && !integMenu.contains(e.target) && e.target !== integBtn
+        && !integBtn.contains(e.target)) integMenuOpen(false);
   });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && !menu.hidden) { menuOpen(false); caret.focus(); }
+    if (e.key !== "Escape") return;
+    if (!integPanel.hidden) { closeInteg(); integBtn.focus(); return; }
+    if (!integMenu.hidden) { integMenuOpen(false); integBtn.focus(); return; }
+    if (!menu.hidden) { menuOpen(false); caret.focus(); }
   });
   document.addEventListener("skoll:lang", function () {
     if (!runBtn.disabled) runBtn.textContent = T("app.run");
+    if (tgState) applyInteg(tgState);
   });
 })();
 </script>
