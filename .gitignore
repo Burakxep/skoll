@@ -20,5 +20,14 @@ venv/
 .idea/
 .vscode/
 
-# Claude Code per-user settings
-.claude/settings.local.json
+# Claude Code local folder (per-user settings, installed skills incl. the
+# ~10MB impeccable engine binary)
+.claude/
+
+# Impeccable: keep the durable artifacts (config.json, design.json, surfaces/),
+# ignore per-developer overrides and throwaway/ machine-local working files.
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/questions/

@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-22T00:00:00Z",
+  "title": "Design System: Sköll",
+  "extensions": {
+    "colorMeta": {
+      "ground": { "role": "neutral", "displayName": "Riso Ground (warm near-black)", "canonical": "#16130f", "light": "#d7d7d0", "tonalRamp": ["#16130f", "#1d1813", "#272016", "#352d20", "#5c5647", "#a2957c", "#cabfa6", "#ece4d2"] },
+      "surface": { "role": "neutral", "displayName": "Surface", "canonical": "#1d1813", "light": "#e9e8e1" },
+      "surface-2": { "role": "neutral", "displayName": "Surface Raised", "canonical": "#272016", "light": "#dedcd3" },
+      "border": { "role": "neutral", "displayName": "Hairline Border", "canonical": "#352d20", "light": "#bebbb0" },
+      "ink": { "role": "neutral", "displayName": "Paper Ink", "canonical": "#ece4d2", "light": "#1a1712" },
+      "muted": { "role": "neutral", "displayName": "Muted Ink", "canonical": "#a2957c", "light": "#5c5647" },
+      "sun": { "role": "primary", "displayName": "Sun Amber", "canonical": "#ffb000", "light": "#8a5600", "tonalRamp": ["#3d2a00", "#664600", "#8a5600", "#b37700", "#d99500", "#ffb000", "#ffc84d", "#ffe0a3"] },
+      "stamp-bg": { "role": "primary", "displayName": "Stamp Fill", "canonical": "#ffb000", "light": "#e0920f" },
+      "stamp-ink": { "role": "primary", "displayName": "Stamp Ink", "canonical": "#1a1206", "light": "#241400" },
+      "ink-blue": { "role": "secondary", "displayName": "Cool Blue (second ink)", "canonical": "#7aa2f7", "light": "#2b4b8c", "tonalRamp": ["#13203f", "#1f3466", "#2b4b8c", "#3a63b8", "#5a84e0", "#7aa2f7", "#a6c0fa", "#d2e0fd"] },
+      "warn": { "role": "tertiary", "displayName": "Alarm Red", "canonical": "#ff5f63", "light": "#c23236" },
+      "halftone": { "role": "neutral", "displayName": "Halftone Tint", "canonical": "rgba(190, 174, 140, .11)", "light": "rgba(40, 33, 20, .09)" },
+      "source-github": { "role": "data", "displayName": "GitHub", "canonical": "#a3acbb", "light": "#57606a" },
+      "source-reddit": { "role": "data", "displayName": "Reddit", "canonical": "#ff6a3d", "light": "#d44410" },
+      "source-hackernews": { "role": "data", "displayName": "Hacker News", "canonical": "#7aa2f7", "light": "#2b4b8c" },
+      "source-rss": { "role": "data", "displayName": "RSS", "canonical": "#3ccfa4", "light": "#12936e" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display (Anton)", "purpose": "The SKÖLL masthead wordmark only, set in amber. Not the score." },
+      "score": { "displayName": "Score (mono tabular)", "purpose": "The score glyphs, set in the mono data face (700, 24px, tabular-nums) and seated in an amber stamp box in each row's left column." },
+      "repo": { "displayName": "Repo Title (mono)", "purpose": "owner/repo, the primary line of a bulletin row." },
+      "body": { "displayName": "Body (system sans)", "purpose": "Descriptions, clamped 3 lines, max 76ch." },
+      "data": { "displayName": "Data (mono tabular)", "purpose": "Stars, stars/day, dates, counts." },
+      "meta": { "displayName": "Meta (mono)", "purpose": "The source · tag · date meta line and source names." }
+    },
+    "shadows": [
+      { "name": "overlay", "value": "0 10px 30px rgba(0, 0, 0, .40)", "purpose": "Floating layers only: settings popover, Run menu, prompt slide-over panel. Never on sheet content." }
+    ],
+    "motion": [
+      { "name": "state", "value": "0.15s (border-color, background, opacity)", "purpose": "Short mechanical control-state transitions." },
+      { "name": "register-snap", "value": "0.18s steps(3)", "purpose": "The overprint ghost snapping into register on breakout hover/focus; a print-press step, never an eased float." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "640px" }
+    ],
+    "notes": [
+      "The score number is set in the mono data face (var(--mono), 700, 24px, tabular-nums, -0.5px), not the Anton display face. The amber stamp box (fill/tint/outline by tier) carries it, but the glyphs are mono.",
+      "Anton ('Skoll Display') is a one-voice display: the SKÖLL masthead wordmark only. The wordmark ships amber (h1 { color: var(--sun) }), line-height 1 with a 5px padding-top. The runic mark beside it is muted mono.",
+      "border-radius is 0 system-wide; the only curve is the 8px source dot (50%).",
+      "Body carries a 5px radial-dot halftone background-image (the riso paper grain).",
+      "prefers-reduced-motion disables the overprint offset entirely (title held in register).",
+      "Cool blue (--ink-blue) is live on the focus-tag chips (text at rest, full fill on the active filter).",
+      "Telegram integration lives in the Settings popover; the weekly page reuses the bulletin rows, mono tables, and a clickable Best/Okay/Passed tier filter.",
+      "Divergence from the direction contract: ::selection, caret-color and accent-color ship as amber (--sun), not the ink-on-paper plate the contract named. The build wins; recorded as-is. The inverted Ink plate is used for pressed toggles (source tabs, language)."
+    ]
+  },
+  "components": [
+    {
+      "name": "Score Stamp (Best)",
+      "kind": "custom",
+      "refersTo": "score-stamp-top",
+      "description": "The signature mark: a bold mono score seated in a solid amber box for the top tier.",
+      "html": "<span class=\"ds-score ds-score-top\">92</span>",
+      "css": ".ds-score { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; font-size: 24px; line-height: 1; letter-spacing: -.5px; font-variant-numeric: tabular-nums; border-radius: 0; padding: 13px 14px; display: inline-flex; align-items: center; justify-content: center; } .ds-score-top { background: #ffb000; color: #1a1206; }"
+    },
+    {
+      "name": "Score Stamp (Okay / Passed)",
+      "kind": "custom",
+      "refersTo": "score-stamp-high",
+      "description": "Mid-rank stamps: amber glyphs on a soft tint (Okay) or muted glyphs with a hairline (Passed). Mono score, amber box styling by tier.",
+      "html": "<span class=\"ds-score ds-score-high\">61</span> <span class=\"ds-score ds-score-mid\">34</span>",
+      "css": ".ds-score { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; font-size: 24px; line-height: 1; letter-spacing: -.5px; font-variant-numeric: tabular-nums; border-radius: 0; padding: 13px 14px; display: inline-flex; align-items: center; justify-content: center; } .ds-score-high { background: rgba(255,176,0,.15); color: #ffb000; box-shadow: inset 0 0 0 1.5px #ffb000; } .ds-score-mid { color: #a2957c; box-shadow: inset 0 0 0 1.5px #352d20; }"
+    },
+    {
+      "name": "Run Button (split)",
+      "kind": "button",
+      "refersTo": "button-run",
+      "description": "The one amber-filled control; the caret opens Run / Dry-run.",
+      "html": "<span class=\"ds-runsplit\"><button class=\"ds-run\">Run</button><button class=\"ds-run-caret\" aria-label=\"Run options\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"m6 9 6 6 6-6\"/></svg></button></span>",
+      "css": ".ds-runsplit { display: inline-flex; } .ds-run { height: 44px; padding: 0 18px; border: 1px solid #ffb000; background: #ffb000; color: #1a1206; font: 700 14px/1 system-ui, sans-serif; letter-spacing: .3px; cursor: pointer; } .ds-run-caret { height: 44px; width: 40px; border: 1px solid #ffb000; border-left-color: rgba(0,0,0,.28); background: #ffb000; color: #1a1206; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; } .ds-run:focus-visible, .ds-run-caret:focus-visible { outline: 2px solid #ece4d2; outline-offset: 2px; }"
+    },
+    {
+      "name": "Source Tab",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Source filter tab; selected reverses to an Ink plate, not amber.",
+      "html": "<span class=\"ds-tabs\"><button class=\"ds-tab\" aria-selected=\"true\"><span class=\"ds-dot\" style=\"background:#a3acbb\"></span>GitHub <span class=\"ds-n\">12</span></button><button class=\"ds-tab\"><span class=\"ds-dot\" style=\"background:#ff6a3d\"></span>Reddit <span class=\"ds-n\">4</span></button></span>",
+      "css": ".ds-tabs { display: inline-flex; gap: 6px; } .ds-tab { height: 38px; padding: 0 14px; cursor: pointer; border: 1px solid #352d20; background: #1d1813; color: #ece4d2; display: inline-flex; align-items: center; gap: 8px; font: 500 13.5px/1 system-ui, sans-serif; } .ds-tab:hover { border-color: #ece4d2; } .ds-tab[aria-selected=\"true\"] { background: #ece4d2; border-color: #ece4d2; color: #16130f; } .ds-dot { width: 8px; height: 8px; border-radius: 50%; } .ds-n { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: #a2957c; font-variant-numeric: tabular-nums; } .ds-tab[aria-selected=\"true\"] .ds-n { color: inherit; opacity: .75; }"
+    },
+    {
+      "name": "Focus-tag Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "The cool-blue second ink; fills solid blue when it is the active filter.",
+      "html": "<span class=\"ds-chips\"><button class=\"ds-chip ds-chip-on\">redteam</button><button class=\"ds-chip\">c2</button></span>",
+      "css": ".ds-chips { display: inline-flex; gap: 6px; } .ds-chip { background: #272016; border: 1px solid transparent; border-radius: 0; padding: 2px 9px; font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: #7aa2f7; cursor: pointer; } .ds-chip:hover { border-color: #7aa2f7; } .ds-chip-on { background: #7aa2f7; color: #16130f; border-color: #7aa2f7; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Square surface field; amber focus ring.",
+      "html": "<input class=\"ds-search\" type=\"search\" placeholder=\"Search title, description, keywords…\">",
+      "css": ".ds-search { height: 38px; width: 260px; max-width: 100%; padding: 0 12px; border: 1px solid #352d20; border-radius: 0; background: #1d1813; color: #ece4d2; font: 15px/1 system-ui, sans-serif; } .ds-search::placeholder { color: #a2957c; } .ds-search:focus { outline: 2px solid #ffb000; outline-offset: 1px; }"
+    },
+    {
+      "name": "Bulletin Row (breakout, with overprint register)",
+      "kind": "card",
+      "refersTo": null,
+      "description": "The dense 3-column row with a visible hairline grid; the score is a mono stamp, and a breakout prints an amber ghost of the repo title that snaps into register on hover.",
+      "html": "<article class=\"ds-row\"><div class=\"ds-score-col\"><span class=\"ds-score ds-score-top\">92</span></div><div class=\"ds-main\"><div class=\"ds-line\"><span class=\"ds-src\"><span class=\"ds-dot\" style=\"background:#a3acbb\"></span>GitHub</span><span>redteam</span><span>2026-10-22</span></div><h2 class=\"ds-h2\"><a href=\"#\" data-title=\"acme/c2-framework\">acme/c2-framework</a></h2><p class=\"ds-desc\">A keyless, reproducible command-and-control framework for red-team operations.</p></div><div class=\"ds-metric\">+184 ★/day<br>1,204 ★</div></article>",
+      "css": ".ds-row { display: grid; grid-template-columns: 92px 1fr auto; gap: 0; align-items: start; padding: 16px 2px; border-top: 1px solid #352d20; border-bottom: 1px solid #352d20; } .ds-row:hover { background: #1d1813; } .ds-score-col { display: flex; padding-right: 18px; } .ds-score { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; font-size: 24px; line-height: 1; letter-spacing: -.5px; font-variant-numeric: tabular-nums; width: 100%; padding: 13px 0; display: inline-flex; align-items: center; justify-content: center; } .ds-score-top { background: #ffb000; color: #1a1206; } .ds-main { min-width: 0; display: flex; flex-direction: column; gap: 7px; border-left: 1px solid #352d20; padding: 0 18px; } .ds-line { display: flex; gap: 12px; font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: #a2957c; } .ds-src { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; letter-spacing: .3px; color: #ece4d2; } .ds-dot { width: 8px; height: 8px; border-radius: 50%; } .ds-h2 { margin: 0; font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 600; line-height: 1.35; } .ds-h2 a { text-decoration: none; position: relative; color: #ece4d2; } .ds-h2 a:hover { color: #ffb000; } .ds-h2 a::before { content: attr(data-title); position: absolute; left: 3px; top: 2.5px; color: #ffb000; opacity: .6; z-index: -1; transition: left .18s steps(3), top .18s steps(3), opacity .18s steps(3); } .ds-h2 a:hover::before, .ds-h2 a:focus::before { left: 0; top: 0; opacity: 0; } .ds-desc { margin: 0; color: #ece4d2; opacity: .82; font: 13.5px/1.55 system-ui, sans-serif; max-width: 76ch; } .ds-metric { font-family: ui-monospace, Menlo, monospace; font-size: 12px; font-variant-numeric: tabular-nums; color: #a2957c; text-align: right; line-height: 1.7; padding-left: 18px; border-left: 1px solid #352d20; align-self: stretch; } @media (prefers-reduced-motion: reduce) { .ds-h2 a::before { transition: none; left: 0; top: 0; opacity: 0; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Field Bulletin",
+    "overview": "The daily scan printed as a dated security broadsheet — one dense, single-column sheet of what rose today, read top-down by score. It is a riso press artifact (the 2600 / Phrack / DEF CON overprint lineage): a warm near-black paper ground under a fine halftone tint, two inks only, and a visible modular grid left honest as armature rather than hidden behind cards. Mode is Operate: density, scanability and keyboard use outrank expression. The page refuses the auto-fill grid of equal cards and the characterless system-font flatness that made the prior dashboard read as a template; in their place is one aligned column at real tabular density, every datum in monospace, and a condensed poster face carrying the one voice that matters — the SKÖLL masthead wordmark — while the score joins the monospace data spine, stamped into an amber box. Dark is the default; light is a cool newsprint, never cream. The brand lives in precise press details — the amber wordmark and runic mark, the amber score stamp, the fore-edge extent rail, and the overprint-register ghost on breakout rows.",
+    "keyCharacteristics": [
+      "Warm near-black riso ground (#16130f) under a 5px halftone dot tint.",
+      "Exactly two inks: sun amber and cool blue, over paper-ink text.",
+      "Square everything (0 radius); 1px hairline rules form a visible column grid.",
+      "One dense bulletin column, never a card grid; a fore-edge rail shows extent.",
+      "Poster display (Anton) for the SKÖLL wordmark only; every datum, the score included, is monospace with tabular figures.",
+      "Signature: OVERPRINT REGISTER — the breakout row's amber ghost snaps home."
+    ],
+    "rules": [
+      { "name": "The Two Inks Rule", "body": "The world runs on exactly two chromatic inks — sun amber and cool blue — over paper, ground and border neutrals. Amber is the signal (score stamp top tier, wordmark, Run, breakout, rail, masthead rule, focus); blue is the focus-tag chip. Alarm red is an exception reserved for a suspicious finding. A third decorative hue is a hierarchy problem, not a color problem.", "section": "colors" },
+      { "name": "The Inverted-Plate Rule", "body": "A selected or pressed UI toggle — a source tab, a language button — reverses to an Ink plate with Ground text, not amber. Amber is signal; the plate reversal is UI state. (Browser text selection, caret and accent-color are amber in the shipped build, diverging from the contract's named ink-plate selection; the build wins and is recorded as-is.)", "section": "colors" },
+      { "name": "The Mono-Datum Rule", "body": "Anything a pentester would copy, compare or sort — repo name, score, date, stars, stars/day, matched keywords, source name — is monospace with tabular figures. The score is a datum, not a poster element. Prose (descriptions) is the only system-sans text on a row.", "section": "typography" },
+      { "name": "The One-Voice Display Rule", "body": "The Anton display face is spent on exactly one thing: the SKÖLL masthead wordmark. It never sets the score, a section header, a button, or a label. The score belongs to the mono data spine inside its amber box; the stamp box earns the loudness, not the letterforms. Uppercase belongs to the poster wordmark, not to UI labels.", "section": "typography" },
+      { "name": "The Flat-Sheet Rule", "body": "Anything that is part of the sheet is flat — depth is tone + hairline. A drop shadow is a claim that an element floats above the page; only menus and the slide-over may make that claim.", "section": "elevation" },
+      { "name": "The One Action Rule", "body": "Amber fill on a control means 'run the scan.' No other button is filled amber; secondary controls are surface + hairline.", "section": "components" }
+    ],
+    "dos": [
+      "Do keep amber to signal — score stamp (top), wordmark, Run, breakout, rail, masthead rule, focus rings (The Two Inks Rule).",
+      "Do set every datum (repo, score, date, stars, counts, keywords) in monospace with tabular figures; the score is a datum in an amber box.",
+      "Do keep corners square (0 radius); the only circle is the 8px source dot.",
+      "Do convey depth with tone + 1px hairlines; reserve the Overlay shadow for floating menus and the slide-over.",
+      "Do leave the column grid visible as an honest armature (interior hairlines).",
+      "Do default to dark; render light as cool newsprint."
+    ],
+    "donts": [
+      "Don't use the Anton display face for anything but the SKÖLL wordmark — not the score, not headers, not labels.",
+      "Don't fill a second control amber, or introduce a third decorative hue.",
+      "Don't put a shadow on a bulletin row, stamp, chip or the rail.",
+      "Don't fall back to an auto-fill grid of equal cards; the sheet is one dense aligned column.",
+      "Don't use a cream background or terracotta accent in either theme.",
+      "Don't use ALL-CAPS UI labels, 'WORD —' headings, or glyph/emoji icons.",
+      "Don't let any row cause horizontal page scroll at 375px."
+    ]
+  }
+}

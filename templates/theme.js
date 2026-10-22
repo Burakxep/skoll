@@ -12,7 +12,13 @@
   function sync() {
     var dark = root.dataset.theme === "dark";
     var t = window.skollT || function (k) { return k === "theme.light" ? "Light" : "Dark"; };
-    document.getElementById("theme-icon").textContent = dark ? "☀" : "☾";
+    // dark theme shows a sun (switch to light); light shows a moon (switch to dark)
+    var sun = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/>'
+      + '<path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.4 5.6l-1.7 1.7'
+      + 'M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3 5.6 5.6"/></svg>';
+    var moon = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'
+      + '<path d="M20 14.6A8 8 0 1 1 9.4 4a6.3 6.3 0 0 0 10.6 10.6z"/></svg>';
+    document.getElementById("theme-icon").innerHTML = dark ? sun : moon;
     document.getElementById("theme-label").textContent = t(dark ? "theme.light" : "theme.dark");
   }
   document.addEventListener("skoll:lang", function () {

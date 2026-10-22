@@ -1,93 +1,76 @@
 <style>
   .runbar { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .runbar select { height: 44px; padding: 0 10px; border-radius: 12px; max-width: 140px;
-    border: 1px solid var(--border); background: var(--surface); font-size: 14px; cursor: pointer; }
-  .runbar select:hover { border-color: var(--sun); }
-  /* split Run button: primary = normal run, caret = Run / Dry run menu */
+  .runbar select { height: 44px; padding: 0 10px; max-width: 150px; border: 1px solid var(--border);
+    background: var(--surface); font-family: var(--mono); font-size: 13px; cursor: pointer; }
+  .runbar select:hover { border-color: var(--fg); }
+  /* split Run button: the one sun — primary run + caret for Run / Dry run */
   .runsplit { position: relative; display: inline-flex; }
-  .runsplit .run { height: 44px; padding: 0 18px; border: 1px solid var(--sun);
-    border-radius: 12px 0 0 12px; background: var(--sun); color: var(--on-sun);
-    font-size: 14px; font-weight: 600; cursor: pointer; }
-  .runsplit .run-caret { height: 44px; width: 40px; border: 1px solid var(--sun);
-    border-left-color: rgba(0, 0, 0, .18); border-radius: 0 12px 12px 0;
-    background: var(--sun); color: var(--on-sun); font-size: 13px; cursor: pointer; }
+  .runsplit .run { height: 44px; padding: 0 18px; border: 1px solid var(--stamp-bg);
+    background: var(--stamp-bg); color: var(--stamp-ink);
+    font-size: 14px; font-weight: 700; letter-spacing: .3px; cursor: pointer; }
+  .runsplit .run-caret { height: 44px; width: 40px; border: 1px solid var(--stamp-bg);
+    border-left-color: rgba(0, 0, 0, .28); background: var(--stamp-bg); color: var(--stamp-ink);
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
   .runsplit .run:disabled, .runsplit .run-caret:disabled { opacity: .55; cursor: default; }
   .runsplit .run:focus-visible, .runsplit .run-caret:focus-visible {
     outline: 2px solid var(--fg); outline-offset: 2px; }
-  .run-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 40; min-width: 200px;
-    padding: 6px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
-    box-shadow: 0 12px 34px rgba(0, 0, 0, .35); display: flex; flex-direction: column; gap: 2px; }
+  .run-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 40; min-width: 210px;
+    padding: 6px; background: var(--surface); border: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .40); display: flex; flex-direction: column; gap: 2px; }
   .run-menu[hidden] { display: none; }
-  .run-menu button { text-align: left; height: 38px; padding: 0 12px; border: 0; border-radius: 8px;
+  .run-menu button { text-align: left; height: 38px; padding: 0 12px; border: 0;
     background: transparent; color: var(--fg); font-size: 14px; cursor: pointer; white-space: nowrap; }
   .run-menu button:hover { background: var(--surface-2); }
-  .runbar .weekly, .runbar .integ-btn { height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer;
-    border: 1px solid var(--border); background: var(--surface); font-size: 14px;
-    font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
-  .runbar .weekly:hover, .runbar .weekly:focus-visible,
-  .runbar .integ-btn:hover, .runbar .integ-btn:focus-visible { border-color: var(--sun); color: var(--sun); }
-  .integ-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--muted); }
-  .integ-dot.on { background: #3ccfa4; }
-  .integ-dot.warn { background: var(--sun); }
-  .integ-form { display: flex; flex-direction: column; gap: 14px; max-width: 520px; }
-  .integ-row { display: flex; flex-direction: column; gap: 6px; }
-  .integ-row label { font-size: 13px; font-weight: 600; color: var(--muted); }
-  .integ-row input[type="text"], .integ-row input[type="password"], .integ-row input[type="number"] {
-    height: 42px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border);
-    background: var(--surface); }
-  .integ-row input:focus { outline: 2px solid var(--sun); outline-offset: 1px; }
-  .integ-inline { display: flex; gap: 8px; }
-  .integ-inline input { flex: 1 1 auto; min-width: 0; }
-  .integ-check { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
-  .integ-check input { width: 16px; height: 16px; accent-color: var(--sun); }
-  .integ-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-  .integ-msg { min-height: 1.4em; font-size: 13px; color: var(--muted); }
-  .integ-msg.err { color: var(--warn); }
-  .integ-msg.ok { color: #3ccfa4; }
-  .integ-steps { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.55; }
-  .integ-chats { display: flex; flex-direction: column; gap: 4px; }
-  .integ-chats button { text-align: left; height: auto; padding: 8px 12px; border: 1px solid var(--border);
-    border-radius: 10px; background: var(--surface); cursor: pointer; font-size: 13px; }
-  .integ-chats button:hover { border-color: var(--sun); }
-  .integ-hint { margin: 0; color: var(--muted); font-size: 13px; }
+  .runbar .weekly { height: 44px; padding: 0 16px; cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface); font-size: 14px; font-weight: 600; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px; }
+  .runbar .weekly:hover, .runbar .weekly:focus-visible { border-color: var(--fg); }
   @media (max-width: 640px) {
     .runbar { width: 100%; }
     .runbar select { flex: 1 1 120px; max-width: none; }
     .runsplit { flex: 1 1 100%; }
     .runsplit .run { flex: 1 1 auto; }
-    .runbar .weekly, .runbar .integ-btn { flex: 1 1 100%; justify-content: center; }
+    .runbar .weekly { flex: 1 1 100%; justify-content: center; }
   }
   .runlog { position: fixed; right: 16px; bottom: 16px; z-index: 30; width: min(560px, calc(100% - 32px));
-    max-height: 40vh; overflow: auto; margin: 0; padding: 12px 14px; border-radius: 12px;
+    max-height: 40vh; overflow: auto; margin: 0; padding: 12px 14px;
     background: var(--surface); border: 1px solid var(--border); color: var(--muted);
-    font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; }
+    font: 12.5px/1.5 var(--mono); white-space: pre-wrap; }
   .runlog .err { color: var(--warn); }
+
+  /* Telegram integration — opened from the Settings popover, reuses .panel/.pbtn */
+  .integ-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--muted); }
+  .integ-dot.on { background: var(--rss, #3ccfa4); } .integ-dot.warn { background: var(--sun); }
+  .integ-form { display: flex; flex-direction: column; gap: 14px; }
+  .integ-row { display: flex; flex-direction: column; gap: 6px; }
+  .integ-row label { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--muted); }
+  .integ-row input[type="text"], .integ-row input[type="password"], .integ-row input[type="number"] {
+    height: 42px; padding: 0 12px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); }
+  .integ-row input:focus { outline: 2px solid var(--sun); outline-offset: 1px; }
+  .integ-inline { display: flex; gap: 8px; } .integ-inline input { flex: 1 1 auto; min-width: 0; }
+  .integ-check { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
+  .integ-check input { width: 16px; height: 16px; }
+  .integ-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .integ-msg { min-height: 1.4em; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .integ-msg.err { color: var(--warn); } .integ-msg.ok { color: var(--rss, #3ccfa4); }
+  .integ-steps { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .integ-chats { display: flex; flex-direction: column; gap: 4px; }
+  .integ-chats button { text-align: left; padding: 8px 12px; border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--fg); }
+  .integ-chats button:hover { border-color: var(--fg); }
+  .integ-hint { margin: 0; color: var(--muted); font-size: 13px; }
 </style>
 <div class="runbar">
   __PROFILE_CONTROL__
   <div class="runsplit">
-    <button class="run" id="rb-run" type="button" data-i18n="app.run">▶ Run</button>
-    <button class="run-caret" id="rb-more" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Run options" data-i18n-aria="app.runopts">▾</button>
+    <button class="run" id="rb-run" type="button" data-i18n="app.run">Run</button>
+    <button class="run-caret" id="rb-more" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Run options" data-i18n-aria="app.runopts"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <div class="run-menu" id="rb-menu" role="menu" hidden>
       <button type="button" role="menuitem" data-dry="0" data-i18n="app.run.normal">Run</button>
       <button type="button" role="menuitem" data-dry="1" data-i18n="app.run.dry">Dry run (don't write history)</button>
     </div>
   </div>
-  <a class="weekly" href="__WEEKLY_HREF__"><span aria-hidden="true">📈</span><span data-i18n="app.weekly">Weekly</span></a>
-  <div class="runsplit">
-    <button class="integ-btn" id="rb-integ" type="button" aria-haspopup="true" aria-expanded="false"
-            aria-label="Integrations" data-i18n-aria="app.integrations">
-      <span class="integ-dot" id="rb-integ-dot" aria-hidden="true"></span>
-      <span data-i18n="app.integrations">Integrations</span>
-      <span aria-hidden="true">▾</span>
-    </button>
-    <div class="run-menu" id="rb-integ-menu" role="menu" hidden>
-      <button type="button" role="menuitem" id="rb-integ-tg" data-integ="telegram">
-        <span class="integ-dot" id="tg-dot" aria-hidden="true"></span>
-        <span data-i18n="integ.telegram">Telegram</span>
-      </button>
-    </div>
-  </div>
+  <a class="weekly" href="__WEEKLY_HREF__"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16"/><path d="m7 15 4-5 3 3 4-6"/></svg><span data-i18n="app.weekly">Weekly</span></a>
 </div>
 <pre class="runlog" id="rb-log" hidden></pre>
 <div class="scrim" id="integ-scrim" hidden></div>
@@ -95,7 +78,7 @@
   <div class="panel-head">
     <strong id="integ-title" data-i18n="integ.title">Telegram</strong>
     <div class="panel-tools">
-      <button class="pbtn" type="button" id="integ-close" aria-label="Close" data-i18n-aria="panel.close">✕</button>
+      <button class="pbtn" type="button" id="integ-close" aria-label="Close" data-i18n-aria="panel.close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
   </div>
   <div class="panel-body">
@@ -186,14 +169,15 @@
   Array.prototype.forEach.call(menu.querySelectorAll("button"), function (b) {
     b.onclick = function () { start(b.dataset.dry === "1"); };
   });
-  var integBtn = $("rb-integ"), integMenu = $("rb-integ-menu");
+
+  // ---- Telegram integration, triggered from the Settings popover.
+  // The Settings button is injected AFTER this run bar in the header, so it is
+  // not in the DOM yet — wire it up on DOMContentLoaded (below).
+  var tgTrigger = null;
   var integPanel = $("integ-panel"), integScrim = $("integ-scrim");
   var tgState = null;
-  function integMenuOpen(open) {
-    integMenu.hidden = !open;
-    integBtn.setAttribute("aria-expanded", open ? "true" : "false");
-  }
   function setDot(el, tg) {
+    if (!el) return;
     el.classList.remove("on", "warn");
     if (tg && tg.enabled && tg.configured) el.classList.add("on");
     else if (tg && tg.configured) el.classList.add("warn");
@@ -201,7 +185,7 @@
   function applyInteg(tg) {
     if (!tg) return;
     tgState = tg;
-    setDot($("rb-integ-dot"), tg);
+    setDot($("settings-integ-dot"), tg);
     setDot($("tg-dot"), tg);
     if (tg.chat_id) $("tg-chat").value = tg.chat_id;
     $("tg-on").checked = !!tg.enabled;
@@ -233,20 +217,26 @@
     return out;
   }
   function openInteg() {
-    integMenuOpen(false);
+    var pop = $("settings-pop"); if (pop) pop.hidden = true;
+    var sb = $("settings-btn"); if (sb) sb.setAttribute("aria-expanded", "false");
     integPanel.hidden = false; integScrim.hidden = false;
+    $("integ-close").focus();
     fetch("/api/integrations").then(function (r) { return r.json(); })
       .then(function (d) { applyInteg(d.telegram); msg(""); });
   }
   function closeInteg() {
     integPanel.hidden = true; integScrim.hidden = true;
+    if (tgTrigger) tgTrigger.focus();
   }
-  fetch("/api/integrations").then(function (r) { return r.json(); })
-    .then(function (d) { applyInteg(d.telegram); }).catch(function () {});
-  integBtn.onclick = function (e) {
-    e.stopPropagation(); integMenuOpen(integMenu.hidden);
-  };
-  $("rb-integ-tg").onclick = function () { openInteg(); };
+  // reveal the Settings → Telegram entry (hidden in the offline report) and wire it
+  document.addEventListener("DOMContentLoaded", function () {
+    tgTrigger = $("settings-telegram");
+    if (!tgTrigger) return;
+    tgTrigger.hidden = false;
+    tgTrigger.onclick = openInteg;
+    fetch("/api/integrations").then(function (r) { return r.json(); })
+      .then(function (d) { applyInteg(d.telegram); }).catch(function () {});
+  });
   $("integ-close").onclick = closeInteg;
   integScrim.onclick = closeInteg;
   $("integ-form").onsubmit = function (e) {
@@ -293,13 +283,10 @@
   };
   document.addEventListener("click", function (e) {
     if (!menu.hidden && !menu.contains(e.target) && e.target !== caret) menuOpen(false);
-    if (!integMenu.hidden && !integMenu.contains(e.target) && e.target !== integBtn
-        && !integBtn.contains(e.target)) integMenuOpen(false);
   });
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
-    if (!integPanel.hidden) { closeInteg(); integBtn.focus(); return; }
-    if (!integMenu.hidden) { integMenuOpen(false); integBtn.focus(); return; }
+    if (!integPanel.hidden) { closeInteg(); return; }
     if (!menu.hidden) { menuOpen(false); caret.focus(); }
   });
   document.addEventListener("skoll:lang", function () {

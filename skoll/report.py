@@ -146,9 +146,16 @@ def head_js() -> str:
 CONTROLS = """<div class="controls">
       <div class="settings">
         <button class="theme-btn" id="settings-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings" data-i18n-aria="settings.aria">
-          <span aria-hidden="true">⚙</span><span class="label" data-i18n="settings.label">Settings</span>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h16"/><circle cx="9" cy="6.5" r="2.3"/><circle cx="16" cy="12" r="2.3"/><circle cx="8" cy="17.5" r="2.3"/></svg><span class="label" data-i18n="settings.label">Settings</span>
         </button>
         <div class="settings-pop" id="settings-pop" role="menu" hidden>
+          <div class="set-row">
+            <span class="set-lbl" data-i18n="app.integrations">Integrations</span>
+            <button class="theme-btn" id="settings-telegram" type="button" hidden aria-haspopup="dialog" data-i18n-aria="app.integrations">
+              <span class="integ-dot" id="settings-integ-dot" aria-hidden="true"></span>
+              <span data-i18n="integ.telegram">Telegram</span>
+            </button>
+          </div>
           <div class="set-row">
             <span class="set-lbl" data-i18n="settings.lang">Language</span>
             <div class="lang" role="group" aria-label="Language" data-i18n-aria="lang.aria">
@@ -159,7 +166,7 @@ CONTROLS = """<div class="controls">
           <div class="set-row">
             <span class="set-lbl" data-i18n="settings.theme">Theme</span>
             <button class="theme-btn" id="theme" type="button" aria-label="Toggle light/dark mode" data-i18n-aria="theme.aria">
-              <span id="theme-icon">◐</span><span class="label" id="theme-label">Theme</span>
+              <span id="theme-icon" aria-hidden="true"></span><span class="label" id="theme-label">Theme</span>
             </button>
           </div>
         </div>
@@ -194,7 +201,8 @@ def tier_legend(clickable: bool = False) -> str:
 def page_fills() -> dict[str, str]:
     """Placeholders shared by every Sköll page."""
     return {
-        "__THEME_CSS__": (TEMPLATES / "theme.css").read_text(encoding="utf-8"),
+        "__THEME_CSS__": ((TEMPLATES / "fonts.css").read_text(encoding="utf-8")
+                          + "\n" + (TEMPLATES / "theme.css").read_text(encoding="utf-8")),
         "__HEAD_JS__": head_js(),
         "__CONTROLS__": CONTROLS,
         "__FAVICON__": _data_uri(TEMPLATES / "favicon.png"),
@@ -206,8 +214,10 @@ def page_fills() -> dict[str, str]:
 ACTIONS = ('<button class="theme-btn act-btn" type="button" data-open-doc="prompt" '
            'title="Create Prompt" data-i18n-title="btn.prompt" '
            'aria-label="Create Prompt" data-i18n-aria="btn.prompt">'
-           '<span aria-hidden="true">✨</span><span class="txt" data-i18n="btn.prompt">'
-           'Create Prompt</span></button>')
+           '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'
+           '<path d="M5 3.5h9.5l4 4V20.5H5z"/><path d="M14 3.5V8h4.5"/>'
+           '<path d="M8 12.5h8M8 16h5"/></svg>'
+           '<span class="txt" data-i18n="btn.prompt">Create Prompt</span></button>')
 
 
 def build_html(items: list[Item], profile_name: str, date: str,
@@ -229,6 +239,10 @@ def build_html(items: list[Item], profile_name: str, date: str,
                 f'{name} <span class="n"></span></button>')
 
     cards = "\n".join(_card(it) for it in items)
+    # Fore-edge extent rail: one tick per item, amber for a Best-tier (top) hit.
+    ticks = "".join(
+        f'<span class="tick{" best" if it.tier == "top" else ""}"></span>' for it in items)
+    rail = f'<span class="n">{len(items)}</span>{ticks}' if items else ""
     # Logo/favicon are embedded so the report stays a single file.
     fills = {
         **page_fills(),
@@ -238,6 +252,7 @@ def build_html(items: list[Item], profile_name: str, date: str,
         "__TIER_LEGEND__": tier_legend(clickable=True),
         "__TABS__": "".join(tabs),
         "__CARDS__": cards,
+        "__RAIL__": rail,
         "__ACTIONS__": ACTIONS,
         "__DOCS__": docs,
     }
@@ -296,21 +311,24 @@ def _card(it: Item) -> str:
     kw = (f'<div class="kw">{i18n("card.matched")} {e(", ".join(it.matched_keywords[:10]))}</div>'
           if it.matched_keywords else "")
     cls = "card" + "".join(f" {t}" for t in ("suspicious", "breakout") if t in it.tags)
+    title = e(it.title)
     return f"""<article class="{cls}" data-source="{e(it.source)}" data-score="{it.score}" \
 data-spd="{it.stars_per_day}" data-date="{date}" data-tier="{e(it.tier)}" data-tags="{e(' '.join(it.tags))}" \
 data-text="{e(text)}">
-  <div class="top">
-    <span class="src" lang="en"><span class="dot" style="background:var(--{e(it.source)})"></span>{_src_label(it)}</span>
-    <span>{date}</span>
-    {score_badge(it.score, it.tier)}
+  <div class="score-col">{score_badge(it.score, it.tier)}</div>
+  <div class="main">
+    <div class="line">
+      <span class="src" lang="en"><span class="dot" style="background:var(--{e(it.source)})"></span>{_src_label(it)}</span>
+      <span>{date}</span>
+      {boom}
+      {f'<div class="chips">{chips}</div>' if chips else ''}
+    </div>
+    <h2><a href="{e(it.url)}" target="_blank" rel="noopener" data-title="{title}">{title}</a></h2>
+    {f'<p class="desc">{e(desc)}</p>' if desc else ''}
+    {repo}
+    {kw}
   </div>
-  <h2><a href="{e(it.url)}" target="_blank" rel="noopener">{e(it.title)}</a></h2>
-  {f'<p class="desc">{e(desc)}</p>' if desc else ''}
-  {f'<div class="stats">{stats}</div>' if stats else ''}
-  {f'<div class="chips">{chips}</div>' if chips else ''}
-  {boom}
-  {repo}
-  {kw}
+  <div class="metric">{stats}</div>
 </article>"""
 
 

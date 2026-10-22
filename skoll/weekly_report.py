@@ -10,7 +10,8 @@ from __future__ import annotations
 import html
 from pathlib import Path
 
-from .report import REPORTS, TEMPLATES, _CHIP_CLASS, i18n, page_fills, score_badge, t_en
+from .report import (REPORTS, TEMPLATES, _CHIP_CLASS, i18n, page_fills,
+                     score_badge, t_en, tier_legend)
 from .weekly import Entry, Trend, WeeklyReport
 
 _LABELS = {"github": "GitHub", "hackernews": "HN", "reddit": "Reddit", "rss": "Blogs"}
@@ -147,7 +148,7 @@ def _item_html(e: Entry) -> str:
                     for t in e.tags)
     seen = i18n("item.seen", cls="seen") if e.reported else ""
     created = f"<span>{e.created:%Y-%m-%d}</span>" if e.created else ""
-    return f"""<div class="item">
+    return f"""<div class="item" data-tier="{x(e.tier or 'high')}">
   <a href="{x(e.url)}" target="_blank" rel="noopener">{x(e.title)}</a>
   {score_badge(e.score, e.tier)}
   <div class="meta"><span class="src" lang="en"><span class="dot" style="background:var(--{x(e.source)})"></span>{_label(e.source)}</span>{created}{chips}{seen}</div>
@@ -208,6 +209,7 @@ def build_weekly_html(rep: WeeklyReport, profile_name: str) -> str:
         "__NEW__": _trend_table("th.new", rep.new_keywords, "empty.new"),
         "__ACTIVE__": _trend_table("th.active", rep.keywords, "empty.active"),
         "__GAINERS__": gainers,
+        "__TIER_LEGEND__": tier_legend(clickable=True),
         "__ITEMS__": "".join(_item_html(e) for e in rep.top_items)
                      or i18n("empty.items", tag="p", cls="empty"),
     }

@@ -93,13 +93,19 @@ python -m skoll serve            # http://127.0.0.1:8765
 ```
 
 It serves the normal dashboard with a header **Run** control, a **Weekly**
-link, **Integrations** (Telegram bot: token, chat, send-after-scan) and
-**✨ Create Prompt**. Run starts the same scan as `skoll run`, shows its log,
-and reloads the page with the new report. If Telegram is enabled, that scan's
-new items are posted to the chat. One scan at a time; the server only listens
-on `127.0.0.1`. Reports opened straight from disk don't show the Run row, since
-they have no server behind them. Telegram tokens stay in `config.yaml`
-(gitignored) or `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`.
+link, **Create Prompt** and a **Settings** menu (language, theme and
+**Integrations → Telegram**). Run starts the same scan as `skoll run`, shows
+its log, and reloads the page with the new report. One scan at a time; the
+server only listens on `127.0.0.1`. Reports opened straight from disk don't
+show the Run row, since they have no server behind them.
+
+**Telegram.** Open **Settings → Telegram**, paste a bot token, pick a chat
+(**Find chats** lists the ones your bot can see), and enable it. With *Send
+after each scan* on, every run pushes that scan's new items to the chat. Tokens
+are stored in `config.yaml` (gitignored) or read from `TELEGRAM_BOT_TOKEN` /
+`TELEGRAM_CHAT_ID`; a failing notification never crashes a scan.
+
+![Telegram integration in Settings](assets/telegram.png)
 
 ### Daily reports
 
@@ -116,10 +122,10 @@ reports/cybersec/
 ```
 
 The **dashboard** is a single self-contained HTML file. It has:
-- source tabs, a category menu, search, and sorting by score, date or stars/day;
-- score colours you can click to filter;
-- an **Analysis prompt** button that opens the day's `prompt.md` (copy / download);
-- light/dark themes and an **EN | TR** language switch.
+- source tabs, clickable focus-tag chips, search, and sorting by score, date or stars/day;
+- a **Best / Okay / Passed** score-tier filter with live counts;
+- a **Create Prompt** button that opens the day's `prompt.md` (copy / download);
+- light/dark themes and an **EN | TR** language switch, under **Settings**.
 
 Behaviour across runs:
 - **Same-day re-runs** add the new finds to that day's report; they never shrink it.

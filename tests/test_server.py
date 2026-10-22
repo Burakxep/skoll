@@ -91,7 +91,7 @@ class ServerTest(unittest.TestCase):
         self.assertNotIn('id="rb-focus"', body)            # focus selector removed
         self.assertNotIn('id="cat"', body)                 # category menu removed
         self.assertIn('data-open-doc="prompt"', body)
-        self.assertIn('id="rb-integ"', body)
+        self.assertIn('id="settings-telegram"', body)      # Telegram lives in the Settings popover
         self.assertIn('id="integ-panel"', body)
         self.assertIn('data-i18n="app.integrations"', body)
 

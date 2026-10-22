@@ -9,11 +9,10 @@
 __THEME_CSS__
 
   main { padding: 8px 0 56px; }
-  section { margin-top: 28px; }
-  h2 { font-size: 17px; margin: 0 0 4px; }
+  section { margin-top: 32px; }
+  h2 { font-family: var(--mono); font-size: 15px; font-weight: 600; margin: 0 0 4px; }
   .hint { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
-  .panel { background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 16px 18px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); padding: 16px 18px; }
 
   /* notes */
   .notes { border-color: var(--sun); background: var(--sun-soft); }
@@ -22,65 +21,78 @@ __THEME_CSS__
 
   /* stats */
   .stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); }
-  .stat .label { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .stat { border: 1px solid var(--border); padding: 13px 15px; }
+  .stat .label { color: var(--muted); font-family: var(--mono); font-size: 11.5px;
+    display: flex; align-items: center; gap: 8px; }
   .stat .label .dot { width: 9px; height: 9px; border-radius: 50%; }
-  .stat .value { font-size: 28px; font-weight: 700; line-height: 1.2; margin-top: 4px; }
-  .stat .prev { color: var(--muted); font-size: 13px; }
+  .stat .value { font-family: var(--mono); font-size: 26px; font-weight: 700;
+    font-variant-numeric: tabular-nums; line-height: 1.1; margin-top: 6px; }
+  .stat .prev { color: var(--muted); font-family: var(--mono); font-size: 12px; }
   .stat.partial { opacity: .65; }
 
   /* deltas */
   .up { color: var(--rss); font-weight: 600; }
   .down { color: var(--warn); font-weight: 600; }
   .flat { color: var(--muted); }
-  .newbadge { background: var(--sun-soft); color: var(--sun); border-radius: 6px;
-    padding: 1px 7px; font-size: 12px; font-weight: 600; }
+  .newbadge { background: var(--sun-soft); color: var(--sun);
+    padding: 1px 7px; font-family: var(--mono); font-size: 11.5px; font-weight: 600; }
 
   /* category bars */
   .bars { display: grid; gap: 14px; }
   .bar-row { display: grid; grid-template-columns: 120px 1fr 160px; gap: 12px; align-items: center; }
   .bar-name { font-weight: 600; overflow-wrap: anywhere; }
   .bar-pair { display: grid; gap: 4px; }
-  .bar { height: 10px; border-radius: 6px; min-width: 2px; }
+  .bar { height: 10px; min-width: 2px; }
   .bar.this { background: var(--sun); }
   .bar.last { background: var(--border); }
-  .bar-nums { text-align: right; font-size: 13px; white-space: nowrap; }
-  .legend { display: flex; gap: 16px; color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .bar-nums { text-align: right; font-family: var(--mono); font-size: 12px;
+    font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .legend { display: flex; gap: 16px; color: var(--muted); font-family: var(--mono); font-size: 12px; margin-bottom: 12px; }
   .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px;
-    border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+    margin-right: 6px; vertical-align: -1px; }
   .legend .l-this::before { background: var(--sun); }
   .legend .l-last::before { background: var(--border); }
 
   /* tables */
   .cols { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px;
-    text-transform: uppercase; letter-spacing: .4px; padding: 0 0 8px; }
+  th { text-align: left; color: var(--muted); font-family: var(--mono); font-weight: 500;
+    font-size: 11.5px; letter-spacing: .3px; padding: 0 0 8px; }
   td { padding: 7px 0; border-top: 1px solid var(--border); }
-  td.num, th.num { text-align: right; white-space: nowrap; padding-left: 10px; }
+  td.num, th.num { text-align: right; white-space: nowrap; padding-left: 10px;
+    font-family: var(--mono); font-variant-numeric: tabular-nums; }
   td a { text-decoration: none; overflow-wrap: anywhere; }
   td a:hover { color: var(--sun); }
   .empty { color: var(--muted); font-size: 14px; margin: 0; }
 
-  /* top items */
-  .items { display: grid; gap: 10px; }
+  /* tier filter for the top items: bigger, obviously clickable buttons */
+  .top-legend { margin: 2px 0 16px; }
+  .top-legend .tier-legend { gap: 8px; }
+  .top-legend .tier-btn .score { height: 40px; padding: 0 18px; font-size: 14px; gap: 9px; }
+  .top-legend .tier-btn:hover .score { background: var(--surface-2); }
+  .item[hidden] { display: none; }
+
+  /* top items — bulletin rows, matching the dashboard */
+  .items { display: grid; gap: 0; }
   .item { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; }
-  .item:hover { border-color: var(--sun); }
-  .item a { text-decoration: none; font-weight: 600; overflow-wrap: anywhere; }
+    border-bottom: 1px solid var(--border); padding: 14px 2px; }
+  .item:first-child { border-top: 1px solid var(--border); }
+  .item:hover { background: var(--surface); }
+  .item a { text-decoration: none; font-family: var(--mono); font-weight: 600; overflow-wrap: anywhere; }
   .item a:hover { color: var(--sun); }
   .item .score { align-self: start; }
-  .item .meta { grid-column: 1 / -1; color: var(--muted); font-size: 13px;
+  .item .meta { grid-column: 1 / -1; color: var(--muted); font-family: var(--mono); font-size: 11.5px;
     display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
   .src { display: inline-flex; align-items: center; gap: 6px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: .5px; font-size: 12px; }
+    font-size: 11.5px; color: var(--fg); }
   .src .dot { width: 8px; height: 8px; border-radius: 50%; }
-  .chip { background: var(--surface-2); border-radius: 8px; padding: 1px 8px; font-size: 12px; color: var(--fg); }
+  .chip { background: var(--surface-2); padding: 1px 8px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-blue); }
   .chip.warn { background: var(--warn-soft); color: var(--warn); font-weight: 600; }
   .seen { font-size: 12px; }
 
   @media (max-width: 640px) {
     .wrap { padding: 0 16px; }
-    .logo { width: 48px; height: 48px; border-radius: 12px; }
+    .logo { width: 46px; height: 46px; }
     .theme-btn .label { display: none; }
     .bar-row { grid-template-columns: 84px 1fr; gap: 6px 8px; }
     .bar-nums { grid-column: 1 / -1; text-align: left; }
@@ -139,9 +151,37 @@ __HEAD_JS__
   <section>
     <h2 data-i18n="sec.top">Top new items this week</h2>
     <p class="hint" data-i18n="sec.top.hint">Highest scored items created this week, from every source.</p>
-    <p class="hint">__TIER_LEGEND__</p>
+    <div class="top-legend">__TIER_LEGEND__</div>
     <div class="items">__ITEMS__</div>
   </section>
 </main>
+<script>
+(function () {
+  // Tier filter for "Top new items": click Best / Okay / Passed to narrow the list.
+  var legend = document.querySelector(".top-legend .tier-legend");
+  if (!legend) return;
+  var btns = Array.prototype.slice.call(legend.querySelectorAll(".tier-btn"));
+  var items = Array.prototype.slice.call(document.querySelectorAll(".items .item"));
+  var cur = "all";
+  function render() {
+    var counts = {};
+    items.forEach(function (it) {
+      var t = it.dataset.tier || "high";
+      counts[t] = (counts[t] || 0) + 1;
+      it.hidden = cur !== "all" && t !== cur;
+    });
+    btns.forEach(function (b) {
+      var n = b.querySelector(".n");
+      if (n) n.textContent = counts[b.dataset.tier] || 0;
+      b.setAttribute("aria-pressed", b.dataset.tier === cur ? "true" : "false");
+    });
+    legend.classList.toggle("filtering", cur !== "all");
+  }
+  btns.forEach(function (b) {
+    b.onclick = function () { cur = (cur === b.dataset.tier) ? "all" : b.dataset.tier; render(); };
+  });
+  render();
+})();
+</script>
 </body>
 </html>

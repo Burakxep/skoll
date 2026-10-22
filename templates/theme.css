@@ -1,82 +1,114 @@
+  /* Sköll — "Field bulletin" riso world. Warm near-black press ground, one sun
+     amber ink reserved for the score stamp and the Run button, a cool blue as
+     the second ink, ink-on-paper reversal for selected states. Display voice is
+     the embedded Anton (see fonts.css); body is the system sans, data the
+     system mono. Light theme is cool newsprint, never cream. */
   :root {
-    --bg: #0b0d12; --surface: #12161e; --surface-2: #1a202b; --border: #252c39;
-    --fg: #e6e9ef; --muted: #8a93a3;
-    --sun: #f5a524; --sun-soft: rgba(245, 165, 36, .14); --on-sun: #1a1206;
-    --wolf: #e6e9ef; --warn: #f2555a; --warn-soft: rgba(242, 85, 90, .14);
-    --github: #a3acbb; --reddit: #ff6a3d; --hackernews: #ff9a3c; --rss: #3ccfa4;
+    --bg: #16130f; --surface: #1d1813; --surface-2: #272016; --border: #352d20;
+    --fg: #ece4d2; --muted: #a2957c;
+    --sun: #ffb000; --sun-soft: rgba(255, 176, 0, .15); --on-sun: #1a1206;
+    --stamp-bg: #ffb000; --stamp-ink: #1a1206;
+    --ink-blue: #7aa2f7;
+    --wolf: #ece4d2; --warn: #ff5f63; --warn-soft: rgba(255, 95, 99, .15);
+    --github: #a3acbb; --reddit: #ff6a3d; --hackernews: #7aa2f7; --rss: #3ccfa4;
+    --halftone: rgba(190, 174, 140, .11);
+    --display: "Skoll Display", "Arial Narrow", system-ui, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     color-scheme: dark;
   }
   :root[data-theme="light"] {
-    --bg: #f6f5f1; --surface: #ffffff; --surface-2: #efede7; --border: #e0dcd3;
-    --fg: #1b1e24; --muted: #626977;
-    --sun: #d9860f; --sun-soft: rgba(217, 134, 15, .12); --on-sun: #ffffff;
-    --wolf: #1b1e24; --warn: #d0353b; --warn-soft: rgba(208, 53, 59, .10);
-    --github: #57606a; --reddit: #e2470f; --hackernews: #e07a10; --rss: #12936e;
+    --bg: #d7d7d0; --surface: #e9e8e1; --surface-2: #dedcd3; --border: #bebbb0;
+    --fg: #1a1712; --muted: #5c5647;
+    --sun: #8a5600; --sun-soft: rgba(138, 86, 0, .12);
+    --stamp-bg: #e0920f; --stamp-ink: #241400;
+    --ink-blue: #2b4b8c;
+    --wolf: #1a1712; --warn: #c23236; --warn-soft: rgba(194, 50, 54, .12);
+    --github: #57606a; --reddit: #d44410; --hackernews: #2b4b8c; --rss: #12936e;
+    --halftone: rgba(40, 33, 20, .09);
     color-scheme: light;
   }
   * { box-sizing: border-box; }
-  [hidden] { display: none !important; }  /* .card's display:flex would override it */
-  body { margin: 0; background: var(--bg); color: var(--fg);
-    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  [hidden] { display: none !important; }  /* .card's display would override it */
+  body { margin: 0; color: var(--fg);
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--halftone) .9px, transparent 1px);
+    background-size: 5px 5px;
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   a { color: inherit; }
   button, input, select { font: inherit; color: inherit; }
+  /* browser surfaces carry the world, not the UA defaults */
+  ::selection { background: var(--sun); color: var(--stamp-ink); }
+  :root { accent-color: var(--sun); caret-color: var(--sun); }
+  * { scrollbar-color: var(--border) transparent; scrollbar-width: thin; }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border: 3px solid var(--bg); border-radius: 0; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+  .ico { width: 1em; height: 1em; display: inline-block; vertical-align: -.12em;
+    fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: square; stroke-linejoin: miter; flex: none; }
   .wrap { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
 
-  /* header */
-  header { padding: 28px 0 8px; }
-  .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  /* header — a ruled masthead */
+  header { padding: 26px 0 0; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
+    padding-bottom: 14px; border-bottom: 3px solid var(--sun); }
   .brand > div { min-width: 0; }
   .brand { display: flex; align-items: center; gap: 14px; }
-  .logo { width: 56px; height: 56px; flex: none; display: block;
-    border-radius: 14px; background: #000; border: 1px solid var(--border); }
-  h1 { margin: 0; font-size: 24px; letter-spacing: .3px; }
-  h1 .runes { color: var(--muted); font-weight: 400; font-size: 15px; margin-left: 8px; }
-  .sub { color: var(--muted); font-size: 14px; }
-  .theme-btn { height: 44px; min-width: 44px; padding: 0 14px; border-radius: 12px;
+  .logo { width: 52px; height: 52px; flex: none; display: block;
+    border: 1px solid var(--border); background: #000; filter: grayscale(.2) contrast(1.05); }
+  h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 40px;
+    line-height: 1; padding-top: 5px; letter-spacing: .5px; color: var(--sun); text-transform: uppercase; }
+  h1 .runes { color: var(--muted); font-family: var(--mono); font-weight: 400;
+    font-size: 16px; margin-left: 10px; letter-spacing: 5px; text-transform: none; vertical-align: 6px; }
+  .sub { color: var(--muted); font-family: var(--mono); font-size: 12.5px; margin-top: 6px; }
+
+  /* score stamp — the one sun. Mono tabular; top tier is an inked amber stamp. */
+  .score { font-family: var(--mono); font-weight: 600; font-variant-numeric: tabular-nums;
+    border-radius: 0; padding: 2px 9px; font-size: 13px;
+    background: transparent; color: var(--sun); border: 1.5px solid var(--sun); }
+  .score.mid { color: var(--muted); border-color: var(--border); }
+  .score.high { color: var(--sun); border-color: var(--sun); background: var(--sun-soft); }
+  .score.top { background: var(--stamp-bg); color: var(--stamp-ink); border-color: var(--stamp-bg); }
+  .tier-legend { display: inline-flex; gap: 10px; align-items: center; color: var(--muted); font-size: 13px; }
+  .tier-legend .score { padding: 0 9px; font-size: 12px; font-weight: 600; }
+  .tier-btn { border: 0; background: none; padding: 0; cursor: pointer; }
+  .tier-btn .score { display: inline-flex; align-items: center; gap: 7px; height: 30px;
+    padding: 0 11px; font-size: 12.5px; transition: opacity .15s, border-color .15s; }
+  .tier-btn .n { font-weight: 500; opacity: .85; }
+  .tier-btn:hover .score { border-color: var(--fg); }
+  .tier-btn:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+  .tier-legend.filtering .tier-btn[aria-pressed="false"] .score { opacity: .4; }
+  .tier-btn[aria-pressed="true"] .score { outline: 1.5px solid var(--fg); outline-offset: 1px; }
+
+  /* breakout / suspicious markers */
+  .chip.boom { background: var(--sun); color: var(--stamp-ink); border-color: var(--sun); font-weight: 600; }
+  .boom { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--sun); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); font-weight: 600; }
+
+  /* settings + language (ink-plate selection, never amber) */
+  .theme-btn { height: 44px; min-width: 44px; padding: 0 14px;
     border: 1px solid var(--border); background: var(--surface); cursor: pointer;
     display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
-  .theme-btn:hover { border-color: var(--sun); }
-  /* score tiers: relative to the source's own threshold */
-  .score { font-weight: 700; border-radius: 8px; padding: 2px 10px; font-size: 13px;
-    background: var(--sun-soft); color: var(--sun); }
-  .score.mid { background: var(--surface-2); color: var(--muted); }
-  .score.high { background: var(--sun-soft); color: var(--sun); }
-  .score.top { background: var(--sun); color: var(--on-sun); }
-  .tier-legend { display: inline-flex; gap: 12px; align-items: center; color: var(--muted); font-size: 13px; }
-  .tier-legend .score { padding: 0 8px; font-size: 12px; font-weight: 600; }
-  .tier-btn { border: 0; background: none; padding: 0; cursor: pointer; border-radius: 10px; }
-  .tier-btn .score { display: inline-flex; align-items: center; gap: 6px; height: 32px;
-    padding: 0 12px; font-size: 13px; border-radius: 10px; border: 1px solid transparent;
-    transition: opacity .15s, border-color .15s; }
-  .tier-btn .n { font-weight: 500; opacity: .8; }
-  .tier-btn:hover .score { border-color: var(--sun); }
-  .tier-btn:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
-  .tier-legend.filtering .tier-btn[aria-pressed="false"] .score { opacity: .45; }
-  .tier-btn[aria-pressed="true"] .score { border-color: var(--fg); }
-  /* breakout: an already-reported repo whose stars exploded */
-  .chip.boom { background: var(--sun); color: var(--on-sun); font-weight: 600; }
-  .boom { font-size: 13px; font-weight: 600; color: var(--sun); }
-  .card.breakout { border-color: var(--sun); }
+  .theme-btn:hover { border-color: var(--fg); }
   .controls { display: flex; align-items: center; gap: 10px; flex: none; }
-  /* settings popover: holds the language switch + theme toggle */
   .settings { position: relative; }
   .settings-pop { position: absolute; top: calc(100% + 8px); right: 0; z-index: 40;
-    min-width: 230px; padding: 12px; border-radius: 14px; background: var(--surface);
-    border: 1px solid var(--border); box-shadow: 0 12px 34px rgba(0, 0, 0, .35);
+    min-width: 232px; padding: 12px; background: var(--surface);
+    border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0, 0, 0, .40);
     display: flex; flex-direction: column; gap: 12px; }
   .settings-pop[hidden] { display: none; }
   .set-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
   .set-lbl { color: var(--muted); font-size: 13px; font-weight: 600; }
+  .lang { display: inline-flex; height: 44px; padding: 4px; gap: 4px;
+    border: 1px solid var(--border); background: var(--surface); }
+  .lang-btn { min-width: 44px; border: 0; background: transparent; cursor: pointer;
+    font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--muted); }
+  .lang-btn:hover { color: var(--fg); }
+  .lang-btn[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+  .lang-btn:focus-visible, .theme-btn:focus-visible { outline: 2px solid var(--sun); outline-offset: 1px; }
   @media (max-width: 640px) {
-    .head { flex-wrap: wrap; gap: 12px; }
+    h1 { font-size: 34px; }
+    .head { flex-wrap: wrap; gap: 12px; align-items: center; }
     .brand { flex: 1 1 100%; }
     .controls { margin-left: auto; }
     .settings-pop { right: 0; left: auto; }
   }
-  .lang { display: inline-flex; height: 44px; padding: 4px; gap: 4px; border-radius: 12px;
-    border: 1px solid var(--border); background: var(--surface); }
-  .lang-btn { min-width: 44px; border: 0; border-radius: 8px; background: transparent;
-    cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); }
-  .lang-btn:hover { color: var(--fg); }
-  .lang-btn[aria-pressed="true"] { background: var(--sun); color: var(--on-sun); }
-  .lang-btn:focus-visible { outline: 2px solid var(--sun); outline-offset: 1px; }
