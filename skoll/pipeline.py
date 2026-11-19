@@ -1,6 +1,7 @@
 """Ties it all together: fetch -> dedup -> score/filter -> report."""
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime, timezone
 from typing import Any
 
@@ -123,6 +124,7 @@ def run_profile(profile_name: str, profile: dict[str, Any], *,
 
     # 4. record only what gets reported; the rest is re-scored tomorrow
     report_items = ranked
+    stale: dict[str, int] = {}
     if not dry_run:
         # Earlier runs today: read before recording this run's snapshot.
         earlier = earlier_today(store, profile_name, profile,
@@ -136,6 +138,20 @@ def run_profile(profile_name: str, profile: dict[str, Any], *,
         if earlier:
             report_items = sorted(ranked + earlier, key=lambda x: x.score, reverse=True)
             print(f"  + {len(earlier)} reported earlier today (kept in today's report)")
+
+        # source-health canary: record today's per-source raw counts, then flag
+        # any enabled source that has returned nothing for too many days (a feed
+        # or API that silently goes dead, the way reddit did).
+        enabled = profile.get("sources", list(CONNECTORS.keys()))
+        src_counts = Counter(it.source for it in raw)
+        store.record_source_counts(
+            profile_name, {s: src_counts.get(s, 0) for s in enabled})
+        health_days = int((profile.get("_settings") or {}).get("health_days", 3) or 0)
+        if health_days:
+            stale = store.stale_sources(profile_name, enabled, days=health_days)
+        for src, gap in stale.items():
+            print(f"  ⚠ source health: '{src}' has returned 0 items for "
+                  f"{gap} day(s) — the connector may be broken")
     store.close()
 
     # 4b. watchlist: relevant near-misses just below the bar. Never marked
@@ -152,7 +168,9 @@ def run_profile(profile_name: str, profile: dict[str, Any], *,
                                      focus=focus, dry_run=dry_run, watchlist=watch)
     if not dry_run:
         day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        notify_run(profile.get("_integrations") or {}, ranked, profile_name, day)
-    return {"ranked": ranked, "watchlist": watch, "paths": paths, "counts": {
-        "raw": len(raw), "fresh": len(fresh), "kept": len(ranked),
-        "report": len(report_items), "watch": len(watch)}}
+        notify_run(profile.get("_integrations") or {}, ranked, profile_name, day,
+                   health=stale)
+    return {"ranked": ranked, "watchlist": watch, "stale_sources": stale,
+            "paths": paths, "counts": {
+                "raw": len(raw), "fresh": len(fresh), "kept": len(ranked),
+                "report": len(report_items), "watch": len(watch)}}

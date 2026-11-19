@@ -36,6 +36,9 @@ def _cmd_run(args) -> int:
     print(f"\n✓ Done. raw={c['raw']} new={c['fresh']} kept={c['kept']}"
           + (f" (today's report: {c['report']})" if c.get("report", c["kept"]) != c["kept"] else "")
           + (f" · watchlist: {c['watch']}" if c.get("watch") else ""))
+    stale = result.get("stale_sources") or {}
+    for src, gap in stale.items():
+        print(f"  ⚠ source health: '{src}' silent for {gap} day(s) — check the connector")
     print("  Reports:")
     for kind, path in result["paths"].items():
         print(f"    {kind:7} {path}")

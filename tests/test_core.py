@@ -224,6 +224,36 @@ class StoreTest(unittest.TestCase):
             store.close()
 
 
+class SourceHealthTest(unittest.TestCase):
+    def test_stale_source_is_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            s = Store(Path(d) / "h.db")
+            s.record_source_counts("p", {"github": 10, "reddit": 0}, day="2026-11-15")
+            for day in ("2026-11-16", "2026-11-17", "2026-11-18"):
+                s.record_source_counts("p", {"github": 0, "reddit": 0}, day=day)
+            stale = s.stale_sources("p", ["github", "reddit"], days=3, day="2026-11-18")
+            self.assertEqual(stale, {"github": 3, "reddit": 3})  # last good / first record 11-15
+            s.close()
+
+    def test_healthy_and_unknown_not_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            s = Store(Path(d) / "h.db")
+            s.record_source_counts("p", {"github": 5}, day="2026-11-17")
+            s.record_source_counts("p", {"github": 0}, day="2026-11-18")   # gap 1 < 3
+            self.assertEqual(s.stale_sources("p", ["github"], days=3, day="2026-11-18"), {})
+            # a source with no record yet is skipped, not flagged
+            self.assertEqual(s.stale_sources("p", ["rss"], days=3, day="2026-11-18"), {})
+            s.close()
+
+    def test_rerun_same_day_keeps_best_count(self):
+        with tempfile.TemporaryDirectory() as d:
+            s = Store(Path(d) / "h.db")
+            s.record_source_counts("p", {"github": 0}, day="2026-11-18")
+            s.record_source_counts("p", {"github": 7}, day="2026-11-18")  # later run recovered
+            self.assertEqual(s.stale_sources("p", ["github"], days=1, day="2026-11-18"), {})
+            s.close()
+
+
 class ReportTest(unittest.TestCase):
     def test_day_folder_and_variants(self):
         with tempfile.TemporaryDirectory() as d:

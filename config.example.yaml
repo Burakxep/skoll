@@ -35,6 +35,9 @@ settings:
   focus_min_hits: 2         # keywords needed to assign a focus tag, unless the
                             # hit is in the title/topics
   max_items: 70             # safety cap per report (no fixed minimum)
+  health_days: 3            # warn if an enabled source returns 0 raw items for
+                            # this many days running (a silently-dead feed/API);
+                            # 0 disables the source-health canary
   max_per_source:           # slots per source, so momentum-less sources
     github: 30              # (reddit, blogs) aren't crowded out by GitHub
     hackernews: 10

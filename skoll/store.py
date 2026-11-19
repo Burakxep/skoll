@@ -8,7 +8,7 @@ that starts rising later can still surface."""
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from .models import Item
@@ -64,6 +64,17 @@ class Store:
                 PRIMARY KEY (day, profile, dedup_key)
             );
             CREATE INDEX IF NOT EXISTS idx_obs_profile_day ON observations(profile, day);
+
+            -- Source-health canary: how many raw items each source returned per
+            -- day, so a source that goes silently dead (e.g. an API/feed that
+            -- starts 404ing) can be flagged before weeks of funnel are lost.
+            CREATE TABLE IF NOT EXISTS source_health (
+                day     TEXT NOT NULL,
+                profile TEXT NOT NULL,
+                source  TEXT NOT NULL,
+                raw     INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (day, profile, source)
+            );
             """
         )
         self.conn.commit()
@@ -148,6 +159,42 @@ class Store:
             """SELECT * FROM observations
                WHERE profile = ? AND day = ? AND reported = 1""",
             (profile, day)).fetchall()
+
+    def record_source_counts(self, profile: str, counts: dict[str, int],
+                             day: str | None = None) -> None:
+        """Store today's raw item count per source. Re-running the same day
+        keeps the best count (a later run that succeeded shouldn't look dead)."""
+        day = day or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        self.conn.executemany(
+            """INSERT INTO source_health (day, profile, source, raw)
+               VALUES (?, ?, ?, ?)
+               ON CONFLICT (day, profile, source)
+               DO UPDATE SET raw = MAX(raw, excluded.raw)""",
+            [(day, profile, src, int(n)) for src, n in counts.items()])
+        self.conn.commit()
+
+    def stale_sources(self, profile: str, sources: list[str], *, days: int = 3,
+                      day: str | None = None) -> dict[str, int]:
+        """Days since each source last returned >0 raw items, for the sources
+        whose gap has reached `days` (i.e. likely broken). A source that has
+        records but never a non-zero day counts from its first record; a source
+        with no record yet is skipped (nothing to judge). `day` is 'today'."""
+        day = day or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today = date.fromisoformat(day)
+        out: dict[str, int] = {}
+        for src in sources:
+            rows = self.conn.execute(
+                """SELECT day, raw FROM source_health
+                   WHERE profile = ? AND source = ? ORDER BY day""",
+                (profile, src)).fetchall()
+            if not rows:
+                continue
+            good = [r["day"] for r in rows if (r["raw"] or 0) > 0]
+            ref = good[-1] if good else rows[0]["day"]
+            gap = (today - date.fromisoformat(ref)).days
+            if gap >= days:
+                out[src] = gap
+        return out
 
     def observations(self, profile: str, since: str, until: str) -> list[sqlite3.Row]:
         """Rows with since <= day <= until (YYYY-MM-DD), oldest first."""

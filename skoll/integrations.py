@@ -240,8 +240,10 @@ def send_latest_digest(integrations: dict[str, Any] | None, profile: str,
 
 
 def notify_run(integrations: dict[str, Any] | None, items: list[Item],
-               profile: str, date: str) -> None:
-    """Called after a real (non-dry) scan. Failures are printed, not raised."""
+               profile: str, date: str,
+               health: dict[str, int] | None = None) -> None:
+    """Called after a real (non-dry) scan. Failures are printed, not raised.
+    `health` maps a stale source to its days-silent, prepended as a warning."""
     tg = telegram_settings(integrations)
     if not tg["enabled"] or not tg["send_on_run"]:
         return
@@ -250,6 +252,11 @@ def notify_run(integrations: dict[str, Any] | None, items: list[Item],
         return
     try:
         msgs = format_telegram_messages(items, profile, date, tg["max_items"])
+        if health:
+            warn = ("⚠ <b>Source health</b>: " + ", ".join(
+                f"{_h(_src_label(s))} 0 items for {g}d" for s, g in health.items())
+                + " — a connector may be broken.")
+            msgs = [warn] + msgs
         n = send_telegram_messages(tg["bot_token"], tg["chat_id"], msgs)
         print(f"  telegram: {n} message(s) sent ({len(items)} item(s))")
     except Exception as e:  # noqa: BLE001
