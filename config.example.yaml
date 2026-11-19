@@ -21,6 +21,16 @@ settings:
   breakout:                 # already-reported repo comes back when, since it
     min_gain: 500           # was last reported, it gained >= min_gain stars
     ratio: 5                # AND reached >= ratio x its stars back then
+  watchlist:                # "on the radar" band: relevant items that landed
+    margin: 0.6             # just below the bar. keep those scoring >= margin x
+                            # the source threshold (GitHub 10 -> 6..10, Reddit
+                            # 4 -> 2.4..4) so a quiet day still has something.
+    max: 15                 # overall cap on the band
+    max_per_source:         # per-source caps keep RSS/noise from flooding it;
+      github: 6             # an item needs a real keyword or focus tag to
+      hackernews: 3         # qualify, not just a source bonus
+      reddit: 6
+      rss: 3
   cve_cluster_min: 3        # same author with >= N CVE repos -> "suspicious" tag
   focus_min_hits: 2         # keywords needed to assign a focus tag, unless the
                             # hit is in the title/topics
@@ -69,7 +79,11 @@ profiles:
 
   cybersec:
     # Which sources to pull for this profile.
-    sources: [github, hackernews, reddit, rss]
+    # NOTE: reddit removed 2026-11 — reddit now login-gates anonymous .rss
+    # (old.reddit redirects to /login) and 403s keyless .json, so it yields 0
+    # items without auth. The connector + reddit: block below are kept intact;
+    # re-add `reddit` here if reddit reopens RSS or you wire up OAuth.
+    sources: [github, hackernews, rss]
 
     # Positive relevance signal (generic security terms).
     include:
@@ -206,8 +220,10 @@ profiles:
       within_days: 14           # 2 weeks so the weekly report can compare
       min_points: 5
 
-    # Fetched as ONE multireddit RSS request (Reddit 403s keyless .json and
-    # allows ~1 RSS request/min). RSS has no upvote counts, so no min_score.
+    # DISABLED (not in `sources` above): reddit login-gated anonymous .rss in
+    # 2026-11 (old.reddit -> /login redirect) and 403s keyless .json, so this
+    # yields nothing without auth. Config kept for easy re-enable / OAuth.
+    # Was: one multireddit RSS request (~1 req/min); RSS had no upvote counts.
     reddit:
       listing: new              # new | hot | top (top = top of the week)
       within_days: 7
@@ -231,6 +247,10 @@ profiles:
         - https://www.trustedsec.com/feed/
         - https://labs.watchtowr.com/rss/
         - https://blog.includesecurity.com/feed/
+        - https://blog.trailofbits.com/index.xml          # Trail of Bits — security research & tooling
+        - https://blog.doyensec.com/atom.xml              # Doyensec — web/app & appsec research
+        - https://horizon3.ai/feed/                       # Horizon3 — attack research / exploit analysis
+        - https://www.zerodayinitiative.com/blog?format=rss  # ZDI — vuln/exploit advisories
 
   # --- example of a second, totally different profile (edit or delete) ---
   # llm-tooling:
