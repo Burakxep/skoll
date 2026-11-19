@@ -78,12 +78,16 @@ __THEME_CSS__
   .card h2 a:hover { color: var(--sun); }
   /* overprint register: a breakout prints a shifted amber ghost that snaps home */
   .card.breakout h2 a::before { content: attr(data-title); position: absolute;
-    left: 3px; top: 2.5px; color: var(--sun); opacity: .6; z-index: -1;
-    transition: left .18s steps(3), top .18s steps(3), opacity .18s steps(3); }
-  .card.breakout h2 a:hover::before, .card.breakout h2 a:focus::before { left: 0; top: 0; opacity: 0; }
+    left: 0; top: 0; color: var(--sun); opacity: .6; z-index: -1;
+    /* offset via transform (visual only) so the ghost's box matches the real
+       title exactly and wraps at the same point — a layout `left` offset stole
+       width from the ghost and dropped its last character to a second line */
+    transform: translate(3px, 2.5px);
+    transition: transform .18s steps(3), opacity .18s steps(3); }
+  .card.breakout h2 a:hover::before, .card.breakout h2 a:focus::before { transform: translate(0, 0); opacity: 0; }
   @media (prefers-reduced-motion: reduce) {
     /* no offset animation: hold the title in register, never misregistered */
-    .card.breakout h2 a::before { transition: none; left: 0; top: 0; opacity: 0; }
+    .card.breakout h2 a::before { transition: none; transform: none; opacity: 0; }
   }
   .desc { margin: 0; color: var(--fg); opacity: .82; font-size: 13.5px; max-width: 76ch;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
