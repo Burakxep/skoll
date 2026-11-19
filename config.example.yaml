@@ -255,7 +255,91 @@ profiles:
         - https://horizon3.ai/feed/                       # Horizon3 — attack research / exploit analysis
         - https://www.zerodayinitiative.com/blog?format=rss  # ZDI — vuln/exploit advisories
 
-  # --- example of a second, totally different profile (edit or delete) ---
+  # --- A real second profile: AI / LLM security (prompt injection, jailbreak,
+  #     adversarial ML, agent red-teaming). Shows how to add a topic with its
+  #     own sources, keywords, and per-profile settings. arXiv is pulled through
+  #     the rss connector as TARGETED QUERY feeds, so it never firehoses the way
+  #     the whole cs.CR category would. Delete it if you don't want it. ---
+  ai-security:
+    sources: [rss, github, hackernews]
+
+    # Per-profile settings override: merged over the global `settings:` block
+    # above, leaving every other profile untouched. arXiv is this profile's main
+    # source, so let more of its items through (rss cap 20), but give it LESS
+    # free relevance than curated blogs (source_bonus 2.0 vs 3.0) so a paper has
+    # to earn its place with real security keywords.
+    settings:
+      max_per_source: {rss: 20}
+      source_bonus: {rss: 2.0}
+
+    include:
+      - prompt-injection
+      - jailbreak
+      - adversarial
+      - llm
+      - large-language-model
+      - model-extraction
+      - membership-inference
+      - data-poisoning
+      - model-stealing
+      - backdoor
+      - red-teaming
+      - guardrail
+      - llm-agent
+      - agentic
+
+    # Generic LLM terms count only alongside a real security hit, so a plain
+    # "LLM tutorial" or an RL / topic-modelling paper that only name-drops
+    # "large language model" doesn't leak in.
+    weak_keywords:
+      - adversarial
+      - llm
+      - large-language-model
+      - agentic
+
+    # Recurring non-security themes that slip in via broad matches.
+    exclude:
+      - topic-model
+      - recommender
+      - recommendation
+      - legislation
+      - corruption
+
+    focus_tags:
+      injection: [prompt-injection, indirect-injection, jailbreak, prompt-leaking]
+      poisoning: [data-poisoning, backdoor, model-poisoning, trojan]
+      extraction: [model-extraction, model-stealing, membership-inference, model-inversion]
+      agents: [llm-agent, agentic, tool-use, autonomous-agent]
+      defense: [guardrail, safety-filter, alignment, detection]
+
+    github:
+      queries:
+        - "prompt injection OR jailbreak LLM"
+        - "llm security OR ai red team"
+        - "adversarial machine learning OR model extraction"
+      created_within_days: 21
+      max_repo_age_days: 90
+      created_slice_days: 7
+      min_stars: 2
+      per_page: 100
+      fetch_readme_top: 5
+
+    hackernews:
+      queries: ["prompt injection", "jailbreak", "LLM security", "AI red team"]
+      within_days: 14
+      min_points: 5
+
+    # arXiv via the rss connector: one targeted API query per feed (Atom),
+    # sorted newest-first, so the funnel stays on-topic and bounded.
+    rss:
+      within_days: 10
+      feeds:
+        - https://export.arxiv.org/api/query?search_query=abs:%22prompt+injection%22&sortBy=submittedDate&sortOrder=descending&max_results=40
+        - https://export.arxiv.org/api/query?search_query=abs:jailbreak+AND+abs:%22language+model%22&sortBy=submittedDate&sortOrder=descending&max_results=40
+        - https://export.arxiv.org/api/query?search_query=abs:%22LLM+agent%22+AND+abs:security&sortBy=submittedDate&sortOrder=descending&max_results=40
+        - https://export.arxiv.org/api/query?search_query=abs:%22data+poisoning%22+OR+abs:%22model+extraction%22&sortBy=submittedDate&sortOrder=descending&max_results=40
+
+  # --- an even smaller second profile, for reference (edit or delete) ---
   # llm-tooling:
   #   sources: [github, hackernews]
   #   include: [llm, agent, rag, inference, finetune, prompt]
