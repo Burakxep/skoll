@@ -71,6 +71,22 @@ def save_integrations(path: str | Path | None, integrations: dict[str, Any]) -> 
     return dest
 
 
+def _merge_settings(base: dict[str, Any],
+                    override: dict[str, Any] | None) -> dict[str, Any]:
+    """Global settings with a profile's optional `settings:` block layered on
+    top. One level deep: a dict value (source_bonus, score_threshold, ...) is
+    merged key-by-key so a profile can change just `source_bonus.rss` and keep
+    the rest; any other value is replaced. The base is never mutated, so other
+    profiles are unaffected. No `settings:` on the profile -> identical to base."""
+    out = {k: (dict(v) if isinstance(v, dict) else v) for k, v in base.items()}
+    for key, val in (override or {}).items():
+        if isinstance(val, dict) and isinstance(out.get(key), dict):
+            out[key] = {**out[key], **val}
+        else:
+            out[key] = val
+    return out
+
+
 def get_profile(config: dict[str, Any], name: str) -> dict[str, Any]:
     profiles = config.get("profiles", {})
     if name not in profiles:
@@ -80,7 +96,9 @@ def get_profile(config: dict[str, Any], name: str) -> dict[str, Any]:
     # Merge global exclude/settings into the profile for convenience.
     prof.setdefault("exclude", [])
     prof["exclude"] = list(config.get("global_exclude", [])) + list(prof["exclude"])
-    prof["_settings"] = config.get("settings", {})
+    # Global settings, with the profile's own optional `settings:` block on top.
+    prof["_settings"] = _merge_settings(config.get("settings", {}),
+                                        prof.get("settings"))
     prof["_integrations"] = config.get("integrations") or {}
     return prof
 

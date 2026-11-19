@@ -24,6 +24,20 @@ CONNECTORS = {
 }
 
 
+def dedup_by_key(items: list[Item]) -> list[Item]:
+    """Collapse items that share a dedup_key within a single fetch — the same
+    arXiv paper matching several query feeds, or the same repo returned by
+    several GitHub queries. Keeps the first occurrence."""
+    seen: set[str] = set()
+    out: list[Item] = []
+    for it in items:
+        if it.dedup_key in seen:
+            continue
+        seen.add(it.dedup_key)
+        out.append(it)
+    return out
+
+
 def fetch_all(profile: dict[str, Any]) -> list[Item]:
     """Fetch from every enabled source; a failing source is skipped."""
     enabled = profile.get("sources", list(CONNECTORS.keys()))
@@ -94,8 +108,9 @@ def earlier_today(store: Store, profile_name: str, profile: dict[str, Any], *,
 def run_profile(profile_name: str, profile: dict[str, Any], *,
                 focus: str | None = None, db_path=None,
                 dry_run: bool = False) -> dict:
-    # 1. fetch from every enabled source
-    raw = fetch_all(profile)
+    # 1. fetch from every enabled source (collapsing within-run duplicates:
+    # one paper/repo can match several query feeds or GitHub queries)
+    raw = dedup_by_key(fetch_all(profile))
 
     # 2. dedup against history (items reported on earlier days)
     store = Store(db_path)

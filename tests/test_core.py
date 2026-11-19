@@ -224,6 +224,51 @@ class StoreTest(unittest.TestCase):
             store.close()
 
 
+class ProfileSettingsTest(unittest.TestCase):
+    CFG = {
+        "settings": {"source_bonus": {"rss": 3.0},
+                     "score_threshold": {"rss": 4, "default": 3},
+                     "min_relevance": 2.0,
+                     "max_per_source": {"github": 30, "rss": 10}},
+        "global_exclude": ["newsletter"],
+        "profiles": {
+            "a": {"include": ["x"]},
+            "b": {"include": ["y"], "exclude": ["z"],
+                  "settings": {"source_bonus": {"rss": 1.0},
+                               "max_per_source": {"rss": 20},
+                               "min_relevance": 5.0}},
+        },
+    }
+
+    def test_no_profile_settings_uses_global(self):
+        from skoll.config import get_profile
+        p = get_profile(self.CFG, "a")
+        self.assertEqual(p["_settings"]["source_bonus"], {"rss": 3.0})
+        self.assertEqual(p["_settings"]["min_relevance"], 2.0)
+
+    def test_profile_settings_deep_merge_and_no_mutation(self):
+        from skoll.config import get_profile
+        p = get_profile(self.CFG, "b")
+        self.assertEqual(p["_settings"]["source_bonus"], {"rss": 1.0})       # overridden
+        self.assertEqual(p["_settings"]["min_relevance"], 5.0)               # overridden
+        self.assertEqual(p["_settings"]["score_threshold"], {"rss": 4, "default": 3})  # kept
+        self.assertEqual(p["_settings"]["max_per_source"], {"github": 30, "rss": 20})  # merged
+        self.assertEqual(p["exclude"], ["newsletter", "z"])                  # global + profile
+        # global config dicts are not mutated by the merge
+        self.assertEqual(self.CFG["settings"]["source_bonus"], {"rss": 3.0})
+        self.assertEqual(self.CFG["settings"]["max_per_source"], {"github": 30, "rss": 10})
+
+
+class DedupTest(unittest.TestCase):
+    def test_dedup_by_key_keeps_first_per_source_id(self):
+        from skoll.pipeline import dedup_by_key
+        a = Item(source="rss", source_id="2611.1v1", title="first", url="u1")
+        b = Item(source="rss", source_id="2611.1v1", title="dupe", url="u2")  # same paper, 2nd feed
+        c = Item(source="github", source_id="2611.1v1", title="other", url="u3")  # diff source
+        out = dedup_by_key([a, b, c])
+        self.assertEqual([it.title for it in out], ["first", "other"])
+
+
 class SourceHealthTest(unittest.TestCase):
     def test_stale_source_is_flagged(self):
         with tempfile.TemporaryDirectory() as d:
