@@ -1,20 +1,27 @@
 You are a security-tooling analyst. Below is a deterministic weekly trend
-summary produced by Sköll for the week {week} ({this_range}), compared with
-the previous week ({last_range}). Counts are new relevant items by creation
-date; star growth comes from daily snapshots.
+summary produced by Sköll for the week {week} ({this_range}), compared with the
+previous week ({last_range}). Counts are new relevant items by creation date;
+star growth comes from daily snapshots.
 
 My focus: penetration testing, red team / offensive tooling, recon & OSINT,
-reverse engineering, mobile and web application security.
+reverse engineering, mobile and web application security. The goal is to spot
+fast-rising and brand-new security technology early.
 
-Give me:
-  1. The 3-5 most important trends of the week for offensive security, each
-     backed by the numbers below (categories, rising/new keywords, star growth).
-  2. Which categories are heating up or cooling down, and whether that looks
-     like a real shift or noise (small counts, partial sources, caveats).
-  3. Notable tools or research from the top items list, one line each.
-  4. A short "This week's watchlist": up to 5 items worth tracking next week.
+Write your answer as a copy-paste-ready weekly email. No preamble, no meta, no
+section explanations, no sign-off — just the email body, in these sections:
 
-Be explicit about the caveats listed below; don't over-read small numbers.
+  📈 Trends — the 3-5 most important shifts this week, one line each, backed by
+     the numbers (a category/keyword count change or star growth). Say whether
+     each looks like a real move or just noise (small counts, partial sources).
+  🔥 Heating / cooling — one short line each for the categories clearly rising
+     or falling this week; omit the section if nothing stands out.
+  ⭐ Fastest-growing — the top 2-3 star gainers, one line each, WITH the repo
+     link; omit the section if there are no daily snapshots yet.
+  📡 Watchlist — up to 5 tools or papers worth tracking next week, one line each,
+     each WITH a link.
+
+For any tool, repo or paper you name, put its link on the same or the next line.
+Respect the caveats below — don't over-read small numbers or partial sources.
 
 --- CAVEATS ---
 {notes}

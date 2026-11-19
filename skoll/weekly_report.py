@@ -8,9 +8,10 @@ Re-running in the same week overwrites that week's files.
 from __future__ import annotations
 
 import html
+import json
 from pathlib import Path
 
-from .report import (REPORTS, TEMPLATES, _CHIP_CLASS, i18n, page_fills,
+from .report import (ACTIONS, REPORTS, TEMPLATES, _CHIP_CLASS, i18n, page_fills,
                      score_badge, t_en, tier_legend)
 from .weekly import Entry, Trend, WeeklyReport
 
@@ -212,6 +213,9 @@ def build_weekly_html(rep: WeeklyReport, profile_name: str) -> str:
         "__TIER_LEGEND__": tier_legend(clickable=True),
         "__ITEMS__": "".join(_item_html(e) for e in rep.top_items)
                      or i18n("empty.items", tag="p", cls="empty"),
+        "__ACTIONS__": ACTIONS,
+        "__DOCS__": json.dumps({"prompt": build_weekly_prompt(rep)},
+                               ensure_ascii=False).replace("</", "<\\/"),
     }
     for k, v in fills.items():
         tpl = tpl.replace(k, v)

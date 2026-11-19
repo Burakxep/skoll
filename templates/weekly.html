@@ -14,6 +14,28 @@ __THEME_CSS__
   .hint { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
   .panel { background: var(--surface); border: 1px solid var(--border); padding: 16px 18px; }
 
+  /* slide-over panel (prompt.md), same as the daily page. id-scoped so it does
+     NOT inherit the content `.panel` box style above. */
+  .scrim { position: fixed; inset: 0; background: rgba(0, 0, 0, .55); z-index: 20; }
+  #panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 21;
+    width: min(720px, 100%); background: var(--bg); border-left: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .40); display: flex; flex-direction: column; }
+  .panel-head { display: flex; align-items: center; gap: 8px; padding: 14px 16px;
+    border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .panel-tabs { display: flex; gap: 6px; }
+  .ptab { height: 36px; padding: 0 14px; cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface); font-weight: 600; }
+  .ptab[aria-selected="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+  .panel-tools { display: flex; gap: 6px; margin-left: auto; }
+  .pbtn { height: 36px; padding: 0 12px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); }
+  .pbtn:hover { border-color: var(--fg); }
+  .panel-hint { margin: 0; padding: 10px 16px 0; color: var(--muted); font-size: 13px; }
+  .panel-body { flex: 1; overflow: auto; padding: 16px 20px 40px; }
+  .panel-body pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere;
+    font: 13px/1.55 var(--mono); color: var(--fg); }
+  .act-btn:focus-visible { outline: 2px solid var(--sun); outline-offset: 1px; }
+  @media (max-width: 640px) { .act-btn .txt { display: none; } }
+
   /* notes */
   .notes { border-color: var(--sun); background: var(--sun-soft); }
   .notes ul { margin: 0; padding-left: 18px; }
@@ -110,9 +132,27 @@ __HEAD_JS__
         <div class="sub">__SUB__</div>
       </div>
     </div>
+    __ACTIONS__
     __CONTROLS__
   </div>
 </header>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside id="panel" role="dialog" aria-modal="true" aria-label="Weekly files" hidden>
+  <div class="panel-head">
+    <div class="panel-tabs" role="tablist">
+      <button class="ptab" type="button" role="tab" data-doc="prompt" aria-selected="true" data-i18n="panel.prompt">prompt.md</button>
+    </div>
+    <div class="panel-tools">
+      <button class="pbtn" type="button" id="p-copy" data-i18n="panel.copy">Copy</button>
+      <button class="pbtn" type="button" id="p-dl" data-i18n="panel.download">Download</button>
+      <button class="pbtn" type="button" id="p-close" aria-label="Close" data-i18n-aria="panel.close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+  </div>
+  <p class="panel-hint" id="p-hint"></p>
+  <div class="panel-body" id="p-body"></div>
+</aside>
+<script type="application/json" id="docs">__DOCS__</script>
 
 <main class="wrap">
   __NOTES__
@@ -181,6 +221,68 @@ __HEAD_JS__
     b.onclick = function () { cur = (cur === b.dataset.tier) ? "all" : b.dataset.tier; render(); };
   });
   render();
+})();
+</script>
+<script>
+(function () {
+  // slide-over: the weekly prompt.md without leaving the page (same UX as daily)
+  var panel = document.getElementById("panel");
+  if (!panel) return;
+  var docs = {};
+  try { docs = JSON.parse(document.getElementById("docs").textContent); } catch (e) {}
+  var scrim = document.getElementById("scrim");
+  var body = document.getElementById("p-body");
+  var hint = document.getElementById("p-hint");
+  var ptabs = Array.prototype.slice.call(panel.querySelectorAll(".ptab"));
+  var cur = "prompt";
+  function show(which) {
+    cur = which;
+    ptabs.forEach(function (t) {
+      t.setAttribute("aria-selected", t.dataset.doc === which ? "true" : "false");
+    });
+    body.innerHTML = "<pre></pre>";
+    body.firstChild.textContent = docs[which] || "";
+    hint.textContent = window.skollT ? window.skollT("panel.prompt.hint") : "";
+    body.scrollTop = 0;
+  }
+  function open(which) {
+    show(which);
+    panel.hidden = false; scrim.hidden = false;
+    document.getElementById("p-close").focus();
+  }
+  function close() { panel.hidden = true; scrim.hidden = true; }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-open-doc]"), function (b) {
+    b.onclick = function () { open(b.dataset.openDoc); };
+  });
+  ptabs.forEach(function (t) { t.onclick = function () { show(t.dataset.doc); }; });
+  scrim.onclick = close;
+  document.getElementById("p-close").onclick = close;
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && !panel.hidden) close();
+  });
+  document.getElementById("p-copy").onclick = function () {
+    var btn = this, text = docs[cur] || "";
+    var done = function () {
+      btn.textContent = window.skollT("panel.copied");
+      setTimeout(function () { btn.textContent = window.skollT("panel.copy"); }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () {});
+    } else {
+      var ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+  };
+  document.getElementById("p-dl").onclick = function () {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([docs[cur] || ""], { type: "text/markdown" }));
+    a.download = "weekly-" + cur + ".md";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  };
+  document.addEventListener("skoll:lang", function () { if (!panel.hidden) show(cur); });
 })();
 </script>
 </body>
