@@ -34,7 +34,8 @@ def _cmd_run(args) -> int:
                          dry_run=args.dry_run)
     c = result["counts"]
     print(f"\n✓ Done. raw={c['raw']} new={c['fresh']} kept={c['kept']}"
-          + (f" (today's report: {c['report']})" if c.get("report", c["kept"]) != c["kept"] else ""))
+          + (f" (today's report: {c['report']})" if c.get("report", c["kept"]) != c["kept"] else "")
+          + (f" · watchlist: {c['watch']}" if c.get("watch") else ""))
     print("  Reports:")
     for kind, path in result["paths"].items():
         print(f"    {kind:7} {path}")

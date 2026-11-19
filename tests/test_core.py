@@ -12,8 +12,8 @@ from skoll.connectors.base import find_repo_url
 from skoll.connectors.github import created_slices
 from skoll.connectors.reddit import _clean_body, _entry_date, _external_link
 from skoll.models import Item
-from skoll.report import write_reports
-from skoll.scoring import _match, rank_and_filter, score_item
+from skoll.report import build_prompt, write_reports
+from skoll.scoring import _match, rank_and_filter, score_item, watchlist_candidates
 from skoll.store import Store
 
 PROFILE = {
@@ -124,6 +124,51 @@ class ThresholdTest(unittest.TestCase):
         self.assertEqual(len(out), 4)
 
 
+class WatchlistTest(unittest.TestCase):
+    # Reddit items carry no momentum, so score == relevance: easy to place
+    # exactly around a threshold. Reddit bar 8.0, margin 0.6 -> band [4.8, 8.0).
+    PROF = {
+        "include": ["exploit", "pentest", "rce", "cve"],
+        "exclude": [],
+        "focus_tags": {"redteam": ["c2", "implant"]},
+        "weak_keywords": ["reverse-engineering"],
+        "_settings": {"score_threshold": {"reddit": 8.0, "default": 3.0},
+                      "min_relevance": 2.0, "focus_min_hits": 2,
+                      "watchlist": {"margin": 0.6, "max": 15}},
+    }
+
+    def post(self, desc, sid="r"):
+        it = Item(source="reddit", source_id=sid, title="t", url="u", description=desc)
+        return score_item(it, self.PROF)
+
+    def test_near_miss_lands_on_watchlist(self):
+        near = self.post("exploit pentest rce")            # 3x2 = 6.0, in band
+        out = watchlist_candidates([near], self.PROF)
+        self.assertEqual([it.source_id for it in out], ["r"])
+        self.assertIn("watchlist", near.tags)
+
+    def test_too_far_below_is_excluded(self):
+        low = self.post("exploit pentest")                 # 2x2 = 4.0 < 4.8
+        self.assertEqual(watchlist_candidates([low], self.PROF), [])
+
+    def test_above_bar_is_not_watchlist(self):
+        good = self.post("exploit pentest rce cve")        # 4x2 = 8.0 >= 8
+        self.assertEqual(watchlist_candidates([good], self.PROF), [])
+
+    def test_source_bonus_alone_is_not_enough(self):
+        prof = {**self.PROF, "_settings": {**self.PROF["_settings"],
+                "source_bonus": {"rss": 6.0},
+                "score_threshold": {"rss": 8.0, "default": 3.0}}}
+        blog = score_item(Item(source="rss", source_id="b", title="t", url="u"), prof)
+        self.assertEqual(blog.score, 6.0)                  # in band, but no keyword
+        self.assertEqual(watchlist_candidates([blog], prof), [])
+
+    def test_reported_items_are_excluded(self):
+        near = self.post("exploit pentest rce")
+        self.assertEqual(
+            watchlist_candidates([near], self.PROF, exclude={near.dedup_key}), [])
+
+
 class GitHubSliceTest(unittest.TestCase):
     def test_two_weekly_slices(self):
         from datetime import date
@@ -192,6 +237,22 @@ class ReportTest(unittest.TestCase):
                 "prompt.dry-run.md", "prompt.md", "prompt.redteam.md",
                 "report.dry-run.html", "report.html", "report.redteam.html"])
             self.assertTrue((root / "p" / "latest.prompt.md").exists())
+
+    def test_prompt_and_digest_carry_watchlist(self):
+        main = [repo("x/a", "exploit pentest")]
+        watch = repo("x/b", "exploit recon")
+        watch.tags = ["watchlist"]
+        prompt = build_prompt(main, "2026-10-14", watchlist=[watch])
+        self.assertIn("WATCHLIST (1)", prompt)
+        self.assertIn("[1]", prompt)       # main candidate
+        self.assertIn("[2]", prompt)       # watchlist continues the numbering
+        self.assertIn("x/b", prompt)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            write_reports(main, "p", date="2026-10-14", root=root, watchlist=[watch])
+            digest = (root / "p" / "2026-10-14" / "digest.md").read_text()
+            self.assertIn("On the radar (1)", digest)
+            self.assertIn("x/b", digest)
 
 
 ATOM = """<?xml version="1.0" encoding="UTF-8"?>

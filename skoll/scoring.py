@@ -188,6 +188,60 @@ def rank_and_filter(items: list[Item], profile: dict[str, Any],
     return capped[:settings.get("max_items", 60)]
 
 
+def watchlist_candidates(items: list[Item], profile: dict[str, Any], *,
+                         focus: str | None = None,
+                         exclude: frozenset[str] | set[str] = frozenset()) -> list[Item]:
+    """Relevant near-misses: items that cleared the relevance gate but fell
+    just short of the per-source score threshold. They feed the report's
+    "on the radar" band so a quiet day still has something to look at, and
+    because they're never marked reported they resurface on later runs until
+    they either graduate into the main report or age out of the source window.
+
+    Firehose guards (so a slow day doesn't flood the band with weak blog
+    posts): a candidate needs a genuine topical hit — a non-weak matched
+    keyword OR a focus tag, not just a source bonus — must score within
+    `margin` of the threshold, and per-source caps (RSS kept tight) stop any
+    one source from crowding it out. `items` must be scored; `exclude` holds
+    the dedup_keys already in the main report."""
+    settings = profile.get("_settings", {})
+    cfg = {"max": 15, "margin": 0.6,
+           "max_per_source": {"github": 6, "hackernews": 3, "reddit": 6, "rss": 3},
+           **(settings.get("watchlist") or {})}
+    margin = float(cfg["margin"])
+    caps: dict[str, int] = cfg.get("max_per_source") or {}
+    weak = {w.lower() for w in profile.get("weak_keywords", [])}
+
+    cands = []
+    for it in items:
+        if it.dedup_key in exclude or "suspicious" in it.tags:
+            continue
+        if not is_relevant(it, profile):
+            continue
+        thr = source_threshold(it.source, settings)
+        if thr <= 0 or it.score >= thr or it.score < thr * margin:
+            continue  # reported already, or too far below the bar
+        strong = any(k.lower() not in weak for k in it.matched_keywords)
+        if not strong and not it.tags:
+            continue  # only a source bonus / weak keyword — not enough signal
+        if focus and focus not in it.tags:
+            continue
+        cands.append(it)
+
+    cands.sort(key=lambda x: x.score, reverse=True)
+    used: dict[str, int] = {}
+    out = []
+    for it in cands:
+        n = used.get(it.source, 0)
+        if it.source in caps and n >= caps[it.source]:
+            continue
+        used[it.source] = n + 1
+        if "watchlist" not in it.tags:
+            it.tags.append("watchlist")
+        it.tier = "watch"
+        out.append(it)
+    return out[:int(cfg["max"])]
+
+
 _CVE = re.compile(r"cve-\d{4}-\d+", re.I)
 
 
@@ -208,7 +262,7 @@ def _flag_cve_clusters(items: list[Item], settings: dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------------------- breakouts
-STATUS_TAGS = {"suspicious", "breakout"}  # flags, not focus categories
+STATUS_TAGS = {"suspicious", "breakout", "watchlist"}  # flags, not focus categories
 
 
 def detect_breakouts(items: list[Item], baselines: dict[str, tuple[str, int]],

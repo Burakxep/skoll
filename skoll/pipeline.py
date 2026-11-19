@@ -10,7 +10,7 @@ from .connectors.reddit import RedditConnector
 from .connectors.rss import RSSConnector
 from .models import Item
 from .scoring import (detect_breakouts, is_relevant, rank_and_filter, score_item,
-                      score_tier)
+                      score_tier, watchlist_candidates)
 from .store import Store
 from . import report as report_mod
 from .integrations import notify_run
@@ -138,13 +138,21 @@ def run_profile(profile_name: str, profile: dict[str, Any], *,
             print(f"  + {len(earlier)} reported earlier today (kept in today's report)")
     store.close()
 
+    # 4b. watchlist: relevant near-misses just below the bar. Never marked
+    # reported (so they resurface until they graduate), they give a quiet day
+    # an "on the radar" band instead of an empty report.
+    reported_keys = {it.dedup_key for it in report_items}
+    watch = watchlist_candidates(fresh, profile, focus=focus, exclude=reported_keys)
+    if watch:
+        print(f"  {len(watch)} on the radar (watchlist, below bar)")
+
     # 5. reports (the whole day's findings, not just this run's)
     readme_top = profile.get("github", {}).get("fetch_readme_top", 5)
     paths = report_mod.write_reports(report_items, profile_name, readme_top=readme_top,
-                                     focus=focus, dry_run=dry_run)
+                                     focus=focus, dry_run=dry_run, watchlist=watch)
     if not dry_run:
         day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         notify_run(profile.get("_integrations") or {}, ranked, profile_name, day)
-    return {"ranked": ranked, "paths": paths, "counts": {
+    return {"ranked": ranked, "watchlist": watch, "paths": paths, "counts": {
         "raw": len(raw), "fresh": len(fresh), "kept": len(ranked),
-        "report": len(report_items)}}
+        "report": len(report_items), "watch": len(watch)}}

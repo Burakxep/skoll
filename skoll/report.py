@@ -52,12 +52,17 @@ def _metrics(it: Item) -> str:
 
 
 # ---------------------------------------------------------------- digest (md)
-def build_digest(items: list[Item], profile_name: str, date: str) -> str:
+def build_digest(items: list[Item], profile_name: str, date: str,
+                 watchlist: list[Item] | None = None) -> str:
+    watchlist = watchlist or []
     lines = [f"# Sköll — {profile_name} — {date}", ""]
-    if not items:
+    if not items and not watchlist:
         lines.append("_No new items passed the filter today._")
         return "\n".join(lines)
-    lines.append(f"**{len(items)} new item(s) found on {date}.**")
+    if items:
+        lines.append(f"**{len(items)} new item(s) found on {date}.**")
+    else:
+        lines.append(f"_Nothing cleared the bar on {date} — see the watchlist below._")
     lines.append("")
     for i, it in enumerate(items, 1):
         tags = f" `{' '.join(it.tags)}`" if it.tags else ""
@@ -78,35 +83,62 @@ def build_digest(items: list[Item], profile_name: str, date: str) -> str:
             lines.append("")
             lines.append(f"matched: {', '.join(it.matched_keywords[:10])}")
         lines.append("")
+    if watchlist:
+        lines.append("---")
+        lines.append("")
+        lines.append(f"## On the radar ({len(watchlist)})")
+        lines.append("")
+        lines.append("_Cleared relevance but scored just below today's bar — "
+                     "rising, not there yet._")
+        lines.append("")
+        for it in watchlist:
+            tags = [t for t in it.tags if t != "watchlist"]
+            tag = f" `{' '.join(tags)}`" if tags else ""
+            lines.append(f"- [{it.title}]({it.url}) — {_src_label(it)} · "
+                         f"score {it.score}{tag}")
+            if it.repo_url and it.repo_url != it.url:
+                lines.append(f"  repo: {it.repo_url}")
+        lines.append("")
     return "\n".join(lines)
 
 
 # ---------------------------------------------------------------- prompt (md)
-def build_prompt(items: list[Item], date: str, readme_top: int = 5) -> str:
+def _prompt_block(it: Item, i: int, include_readme: bool) -> str:
+    block = [f"[{i}] {it.title} ({_src_label(it)}) {_metrics(it)}"]
+    desc = it.description.strip().replace("\n", " ")[:220]
+    if desc:
+        block.append(f"    {desc}")
+    block.append(f"    {it.url}")
+    if it.repo_url and it.repo_url != it.url:
+        block.append(f"    repo: {it.repo_url}")
+    if it.matched_keywords:
+        block.append(f"    matched: {', '.join(it.matched_keywords[:8])}")
+    if it.tags:
+        block.append(f"    tags: {', '.join(it.tags)}")
+    if it.raw.get("breakout"):
+        b = it.raw["breakout"]
+        block.append(f"    breakout: first reported {b['day']} with {b['from']} stars, "
+                     f"now {b['now']}")
+    if include_readme and it.readme_excerpt:
+        block.append(f"    readme: {it.readme_excerpt[:400]}")
+    return "\n".join(block)
+
+
+def build_prompt(items: list[Item], date: str, readme_top: int = 5,
+                 watchlist: list[Item] | None = None) -> str:
     tpl = (TEMPLATES / "analysis_prompt.txt").read_text(encoding="utf-8")
-    blocks = []
-    for i, it in enumerate(items, 1):
-        head = f"[{i}] {it.title} ({_src_label(it)}) {_metrics(it)}"
-        desc = it.description.strip().replace("\n", " ")[:220]
-        block = [head]
-        if desc:
-            block.append(f"    {desc}")
-        block.append(f"    {it.url}")
-        if it.repo_url and it.repo_url != it.url:
-            block.append(f"    repo: {it.repo_url}")
-        if it.matched_keywords:
-            block.append(f"    matched: {', '.join(it.matched_keywords[:8])}")
-        if it.tags:
-            block.append(f"    tags: {', '.join(it.tags)}")
-        if it.raw.get("breakout"):
-            b = it.raw["breakout"]
-            block.append(f"    breakout: first reported {b['day']} with {b['from']} stars, "
-                         f"now {b['now']}")
-        if i <= readme_top and it.readme_excerpt:
-            block.append(f"    readme: {it.readme_excerpt[:400]}")
-        blocks.append("\n".join(block))
-    candidates = "\n\n".join(blocks) if blocks else "(none today)"
-    return tpl.format(date=date, count=len(items), candidates=candidates)
+    watchlist = watchlist or []
+    candidates = "\n\n".join(
+        _prompt_block(it, i, i <= readme_top) for i, it in enumerate(items, 1)
+    ) or "(none today)"
+    # Watchlist blocks continue the numbering so the shortlist can cite any item,
+    # but carry no README (they're only context for a quiet day).
+    watch = "\n\n".join(
+        _prompt_block(it, i, False)
+        for i, it in enumerate(watchlist, len(items) + 1)
+    ) or "(none today)"
+    return tpl.format(date=date, count=len(items), candidates=candidates,
+                      watch_count=len(watchlist), watchlist=watch)
 
 
 # ---------------------------------------------------------------- html
@@ -336,6 +368,7 @@ data-text="{e(text)}">
 def write_reports(items: list[Item], profile_name: str,
                   readme_top: int = 5, date: str | None = None, *,
                   focus: str | None = None, dry_run: bool = False,
+                  watchlist: list[Item] | None = None,
                   root: Path | None = None) -> dict[str, Path]:
     date = date or _today()
     profile_dir = (root or REPORTS) / profile_name
@@ -348,8 +381,8 @@ def write_reports(items: list[Item], profile_name: str,
         "digest": out_dir / f"digest{sfx}.md",
         "prompt": out_dir / f"prompt{sfx}.md",
     }
-    digest = build_digest(items, profile_name, date)
-    prompt = build_prompt(items, date, readme_top)
+    digest = build_digest(items, profile_name, date, watchlist)
+    prompt = build_prompt(items, date, readme_top, watchlist)
     paths["html"].write_text(build_html(items, profile_name, date, prompt),
                              encoding="utf-8")
     paths["digest"].write_text(digest, encoding="utf-8")
