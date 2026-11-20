@@ -114,6 +114,7 @@ def run_profile(profile_name: str, profile: dict[str, Any], *,
 
     # 2. dedup against history (items reported on earlier days)
     store = Store(db_path)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     if dry_run:
         fresh = raw
         print(f"  [dry-run] skipping dedup/history ({len(raw)} items)")
@@ -129,7 +130,6 @@ def run_profile(profile_name: str, profile: dict[str, Any], *,
     if not dry_run:
         fresh_keys = {it.dedup_key for it in fresh}
         old = [score_item(it, profile) for it in raw if it.dedup_key not in fresh_keys]
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         baselines = store.star_baselines(profile_name, [it.dedup_key for it in old], today)
         breakouts = detect_breakouts(old, baselines, profile, focus=focus)
         if breakouts:
@@ -167,20 +167,54 @@ def run_profile(profile_name: str, profile: dict[str, Any], *,
         for src, gap in stale.items():
             print(f"  ⚠ source health: '{src}' has returned 0 items for "
                   f"{gap} day(s) — the connector may be broken")
-    store.close()
 
-    # 4b. watchlist: relevant near-misses just below the bar. Never marked
-    # reported (so they resurface until they graduate), they give a quiet day
-    # an "on the radar" band instead of an empty report.
+    # 4b. watchlist: relevant near-misses just below the bar. Because below-bar
+    # items are never marked reported (so a riser can still graduate), without a
+    # cooldown the same near-miss resurfaces in the "on the radar" band every
+    # single run. Hold a candidate back for `watchlist.cooldown_days` days after
+    # it last appeared, so the band rotates instead of repeating yesterday's list.
     reported_keys = {it.dedup_key for it in report_items}
-    watch = watchlist_candidates(fresh, profile, focus=focus, exclude=reported_keys)
+    wl_cfg = (profile.get("_settings") or {}).get("watchlist") or {}
+    cooldown = int(wl_cfg.get("cooldown_days", 3) or 0)
+    held = store.watchlist_cooldown(
+        profile_name, [it.dedup_key for it in fresh], today, cooldown)
+
+    # Surge override: a held near-miss still comes back if its stars have jumped
+    # since it last showed (gained >= resurface_gain, or multiplied by
+    # >= resurface_ratio) — a breakout shouldn't be muted by the cooldown.
+    surge_gain = int(wl_cfg.get("resurface_gain", 25) or 0)
+    surge_ratio = float(wl_cfg.get("resurface_ratio", 2.0) or 0)
+    by_key = {it.dedup_key: it for it in fresh}
+    cool: set[str] = set()
+    surged = 0
+    for key, base in held.items():
+        it = by_key.get(key)
+        if it is not None and (
+                (surge_gain and it.stars - base >= surge_gain) or
+                (surge_ratio and it.stars >= surge_ratio * max(base, 1))):
+            surged += 1  # grew enough to earn its way back onto the radar
+            continue
+        cool.add(key)
+
+    watch = watchlist_candidates(fresh, profile, focus=focus,
+                                 exclude=reported_keys | cool)
+    if not dry_run:
+        store.mark_watchlisted(
+            profile_name, {it.dedup_key: it.stars for it in watch}, today)
+    store.close()
+    if cool:
+        print(f"  {len(cool)} watchlist near-miss(es) held back (cooldown {cooldown}d)")
+    if surged:
+        print(f"  {surged} held item(s) resurfaced (surged since last shown)")
     if watch:
         print(f"  {len(watch)} on the radar (watchlist, below bar)")
 
     # 5. reports (the whole day's findings, not just this run's)
     readme_top = profile.get("github", {}).get("fetch_readme_top", 5)
+    prompt_focus = (profile.get("_settings") or {}).get("prompt_focus", "")
     paths = report_mod.write_reports(report_items, profile_name, readme_top=readme_top,
-                                     focus=focus, dry_run=dry_run, watchlist=watch)
+                                     focus=focus, dry_run=dry_run, watchlist=watch,
+                                     extra=prompt_focus)
     if not dry_run:
         day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         notify_run(profile.get("_integrations") or {}, ranked, profile_name, day,

@@ -26,6 +26,12 @@ settings:
                             # the source threshold (GitHub 10 -> 6..10, Reddit
                             # 4 -> 2.4..4) so a quiet day still has something.
     max: 15                 # overall cap on the band
+    cooldown_days: 3        # after a near-miss shows on the radar, hold it back
+                            # this many days before it can reappear (0 = off), so
+                            # the same below-bar item doesn't repeat every run
+    resurface_gain: 25      # ...but a held item still comes back early if it has
+    resurface_ratio: 2      # surged since last shown: gained >= resurface_gain
+                            # stars OR multiplied by >= resurface_ratio (breakout)
     max_per_source:         # per-source caps keep RSS/noise from flooding it;
       github: 6             # an item needs a real keyword or focus tag to
       hackernews: 3         # qualify, not just a source bonus
@@ -35,6 +41,12 @@ settings:
   focus_min_hits: 2         # keywords needed to assign a focus tag, unless the
                             # hit is in the title/topics
   max_items: 70             # safety cap per report (no fixed minimum)
+  # prompt_focus: |         # OPTIONAL free-text appended to the analysis prompt
+  #   Audience: your team.   # (reports/<profile>/latest.prompt.md). Use it to set
+  #   On busy days, only     # a target audience or how terse to be WITHOUT editing
+  #   interpret items useful # the committed template. Lives only here (config.yaml
+  #   to us; list the rest   # is gitignored), so it never ships and other users
+  #   as name + link.        # keep the generic default. Empty/absent -> unchanged.
   health_days: 3            # warn if an enabled source returns 0 raw items for
                             # this many days running (a silently-dead feed/API);
                             # 0 disables the source-health canary

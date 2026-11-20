@@ -75,6 +75,19 @@ class Store:
                 raw     INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (day, profile, source)
             );
+
+            -- Watchlist cooldown: the last day each below-bar near-miss appeared
+            -- in the "on the radar" band. Watchlist items are never marked
+            -- reported (so a riser can still graduate), which without this would
+            -- resurface the same near-miss in every run; we hold it back for
+            -- watchlist.cooldown_days days after it last showed.
+            CREATE TABLE IF NOT EXISTS watchlist_seen (
+                profile    TEXT NOT NULL,
+                dedup_key  TEXT NOT NULL,
+                last_day   TEXT NOT NULL,
+                last_stars INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (profile, dedup_key)
+            );
             """
         )
         self.conn.commit()
@@ -195,6 +208,47 @@ class Store:
             if gap >= days:
                 out[src] = gap
         return out
+
+    def watchlist_cooldown(self, profile: str, keys: list[str], day: str,
+                           cooldown: int) -> dict[str, int]:
+        """dedup_keys that appeared on the radar within the last `cooldown` days
+        (but not today), mapped to the star count they had when last shown. The
+        caller holds these back UNLESS they've surged since (a breakout should
+        still resurface), which is why the baseline stars come back too. Gap >=
+        cooldown means it's served its time; a same-day re-run (gap 0) is never
+        held, so the band stays stable within a day."""
+        if cooldown <= 0 or not keys:
+            return {}
+        today = date.fromisoformat(day)
+        out: dict[str, int] = {}
+        for i in range(0, len(keys), 500):  # stay under SQLite's variable limit
+            chunk = keys[i:i + 500]
+            marks = ",".join("?" * len(chunk))
+            for row in self.conn.execute(
+                    f"""SELECT dedup_key, last_day, last_stars FROM watchlist_seen
+                        WHERE profile = ? AND dedup_key IN ({marks})""",
+                    (profile, *chunk)):
+                gap = (today - date.fromisoformat(row["last_day"])).days
+                if 0 < gap < cooldown:
+                    out[row["dedup_key"]] = row["last_stars"] or 0
+        return out
+
+    def mark_watchlisted(self, profile: str, stars_by_key: dict[str, int],
+                         day: str | None = None) -> None:
+        """Record that these keys appeared on the radar today, with the stars
+        they had today (the baseline the cooldown's surge check compares against;
+        each appearance resets it, so a riser must keep growing to re-surface)."""
+        if not stars_by_key:
+            return
+        day = day or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        self.conn.executemany(
+            """INSERT INTO watchlist_seen (profile, dedup_key, last_day, last_stars)
+               VALUES (?, ?, ?, ?)
+               ON CONFLICT (profile, dedup_key)
+               DO UPDATE SET last_day = excluded.last_day,
+                             last_stars = excluded.last_stars""",
+            [(profile, k, day, int(s or 0)) for k, s in stars_by_key.items()])
+        self.conn.commit()
 
     def observations(self, profile: str, since: str, until: str) -> list[sqlite3.Row]:
         """Rows with since <= day <= until (YYYY-MM-DD), oldest first."""

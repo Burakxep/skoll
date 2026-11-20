@@ -125,9 +125,15 @@ def _prompt_block(it: Item, i: int, include_readme: bool) -> str:
 
 
 def build_prompt(items: list[Item], date: str, readme_top: int = 5,
-                 watchlist: list[Item] | None = None) -> str:
+                 watchlist: list[Item] | None = None, extra: str = "") -> str:
     tpl = (TEMPLATES / "analysis_prompt.txt").read_text(encoding="utf-8")
     watchlist = watchlist or []
+    # Optional per-profile guidance (settings.prompt_focus), e.g. a target
+    # audience or how terse to be. Lives only in the gitignored config.yaml, so
+    # the committed template stays generic; empty -> prompt is unchanged.
+    focus_txt = (extra or "").strip()
+    extra = (f"Profile-specific guidance (takes precedence over the defaults "
+             f"above):\n{focus_txt}\n") if focus_txt else ""
     candidates = "\n\n".join(
         _prompt_block(it, i, i <= readme_top) for i, it in enumerate(items, 1)
     ) or "(none today)"
@@ -138,7 +144,7 @@ def build_prompt(items: list[Item], date: str, readme_top: int = 5,
         for i, it in enumerate(watchlist, len(items) + 1)
     ) or "(none today)"
     return tpl.format(date=date, count=len(items), candidates=candidates,
-                      watch_count=len(watchlist), watchlist=watch)
+                      watch_count=len(watchlist), watchlist=watch, extra=extra)
 
 
 # ---------------------------------------------------------------- html
@@ -369,7 +375,7 @@ def write_reports(items: list[Item], profile_name: str,
                   readme_top: int = 5, date: str | None = None, *,
                   focus: str | None = None, dry_run: bool = False,
                   watchlist: list[Item] | None = None,
-                  root: Path | None = None) -> dict[str, Path]:
+                  root: Path | None = None, extra: str = "") -> dict[str, Path]:
     date = date or _today()
     profile_dir = (root or REPORTS) / profile_name
     out_dir = profile_dir / date
@@ -382,7 +388,7 @@ def write_reports(items: list[Item], profile_name: str,
         "prompt": out_dir / f"prompt{sfx}.md",
     }
     digest = build_digest(items, profile_name, date, watchlist)
-    prompt = build_prompt(items, date, readme_top, watchlist)
+    prompt = build_prompt(items, date, readme_top, watchlist, extra=extra)
     paths["html"].write_text(build_html(items, profile_name, date, prompt),
                              encoding="utf-8")
     paths["digest"].write_text(digest, encoding="utf-8")

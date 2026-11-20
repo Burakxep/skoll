@@ -42,7 +42,7 @@ from scratch, keep the "breakout" label visible on it, and say what changed.
 
 If few or none cleared the bar, say so in one short line and lead with the
 On the radar picks instead of forcing a top list.
-
+{extra}
 --- CANDIDATES ({count}) ---
 {candidates}
 
